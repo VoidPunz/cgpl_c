@@ -1,6 +1,10 @@
 # Prerequisites
 *.d
 
+# Vsc workspace
+*.code-workspace
+*.vscode
+
 # Object files
 *.o
 *.ko

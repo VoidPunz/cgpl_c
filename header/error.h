@@ -1,0 +1,37 @@
+#ifndef CGPL_ERROR_H_
+#define CGPL_ERROR_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+/* ANSII */
+#define TERMINAL_COLOR_RED "\033[31m"
+#define TERMINAL_COLOR_GREY "\033[90m"
+#define TERMINAL_COLOR_DEFAULT "\033[0m"
+
+#define ERROR_BAD_ALLOC cgpl_error_fatal("Bad allocation")
+#define ERROR_UNEXPECTED_NULL_PTR cgpl_error_fatal("Bad ptr")
+
+#define WARNING_UNEXPECTED_NULL_PTR cgpl_warning("Bad ptr")
+
+static inline void cgpl_error_fatal(const char* format, ...) {
+    printf(TERMINAL_COLOR_RED "FATAL: ");
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+    printf(TERMINAL_COLOR_DEFAULT "\n");
+    exit(EXIT_FAILURE);
+}
+
+static inline void cgpl_warning(const char* format, ...) {
+    printf(TERMINAL_COLOR_GREY "WARNING: ");
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+    printf(TERMINAL_COLOR_DEFAULT "\n");
+}
+
+#endif /* CGPL_ERROR_H_ */
