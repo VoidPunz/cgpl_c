@@ -1,9 +1,9 @@
 #include "../header/lexer.h"
 
-CGPL_KEYWORD_BUFFER _keyword_var[] = "var";
-
 const KeywordTuple g_Keywords[] = {
-    {.type = TOKEN_KEYWORD_VAR, .keyword = _keyword_var}
+    {.type = TOKEN_KEYWORD_VAR, .keyword = SV_CT("var")},
+    {.type = TOKEN_KEYWORD_BOOL, .keyword = SV_CT("true")},
+    {.type = TOKEN_KEYWORD_BOOL, .keyword = SV_CT("false")},
 };
 
 /* Checks if a lexeme is a digit (0-9)* */
@@ -16,16 +16,17 @@ static inline token_t is_ascii(char ch) {
     return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) ? TOKEN_ASCII : TOKEN_NA;
 }
 
+/* Check if a lexeme is part of a keyword. This function assumes the current type of the given character is of TOKEN_ASCII. */
 static token_t is_keyword(LexerState* ls, char ch) {
     static uint32_t size = 0;
-    for (int i = 0; i < CGPL_ARRAY_SIZE(g_Keywords); i++) {
+    for (size_t i = 0; i < CGPL_ARRAY_SIZE(g_Keywords); i++) {
         const KeywordTuple* tuple = &g_Keywords[i];
-        if (size > CGPL_ARRAY_SIZE(tuple->keyword) - 1) break;
+        if (size > CGPL_ARRAY_SIZE(tuple->keyword.cstr) - 1) break;
 
         /* Ensure a numeric value does not precede the current word */
         if (is_digit(ls->prevCh) != TOKEN_NA) return TOKEN_WORD;
 
-        int res = tuple->keyword[size++] == ch;
+        bool res = tuple->keyword.cstr[size++] == ch;
 
         /* Check if this is the first character in a new lexeme. We can assume that the type for 'ch' is TOKEN_WORD */
         #ifdef DEBUG
@@ -34,8 +35,8 @@ static token_t is_keyword(LexerState* ls, char ch) {
         } else
         #endif
         
-        if (size == CGPL_ARRAY_SIZE(tuple->keyword) - 1) {
-            DEBUG_PRINT("KEYWORD CHECK: %s, %c\n", tuple->keyword, ch);
+        if (size == CGPL_ARRAY_SIZE(tuple->keyword.cstr) - 1) {
+            DEBUG_PRINT("KEYWORD CHECK: %s, %c\n", tuple->keyword.cstr, ch);
             if (res) size = 0;
         }
         return res ? tuple->type : TOKEN_WORD;
@@ -49,7 +50,7 @@ static inline token_t is_word(LexerState* ls, char ch) {
     if (is_digit(ch) == TOKEN_NUMERIC && ls->prevType == TOKEN_WORD) {
         return TOKEN_WORD;
     }
-    /* Otherwise just check if char is an ASCII */
+    /* Otherwise just check if char is an ASCII and possibly a keyword */
     return is_ascii(ch) == TOKEN_ASCII ? is_keyword(ls, ch) : TOKEN_NA;
 }
 
@@ -119,11 +120,10 @@ static void insert_node(LexerState* ls, char ch) {
 
     /* Lexically analyse the character, if none succeed throw a bad token error */
     if ((type = is_whitespace(ch)) == TOKEN_NA && (type = is_operation(ch)) == TOKEN_NA && (type = is_word(ls, ch)) == TOKEN_NA && (type = is_digit(ch)) == TOKEN_NA) {
-        cgpl_error_fatal("Bad token");
+        cgpl_error_fatal("Bad token: (line: %d, col: %d) \"%c\"", ls->line, ls->col, ch);
     }
 
-    /* CGPL_LEXEME_MAX_SIZE - 1 to guarantee final null terminator in string */
-    if (ls->lexemeSize > CGPL_LEXEME_MAX_SIZE - 1) cgpl_error_fatal("Lexeme grew too large (Max %d characters)", CGPL_LEXEME_MAX_SIZE - 1);
+    if (ls->lexemeSize + 1 >= CGPL_LEXEME_MAX_SIZE) cgpl_error_fatal("Lexeme grew too large (Max %d characters)", CGPL_LEXEME_MAX_SIZE);
     ls->lexemeBuffer[ls->lexemeSize++] = ch;
 
     DEBUG_PRINT("%c - %s | %s - %s\n", ch, ls->lexemeBuffer, cgpl_lexer_token_tostring(ls->prevType), cgpl_lexer_token_tostring(type));
@@ -138,10 +138,17 @@ static void insert_node(LexerState* ls, char ch) {
             list_connect(ls->tail, node);
             ls->tail = node;
         }
-        DEBUG_PRINT("Token created: %s, %s - %s\n", cgpl_lexer_token_tostring(ls->prevType), cgpl_lexer_token_tostring(type), ((Token*)node->data)->lexemeBuffer);
+        DEBUG_PRINT("Token created: %s, %s\n", cgpl_lexer_token_tostring(ls->prevType), cgpl_lexer_token_tostring(type));
         if (ls->lexemeSize > 0) memset(ls->lexemeBuffer + 1, '\0', CGPL_LEXEME_MAX_SIZE - 1);
         ls->lexemeBuffer[0] = ch;
         ls->lexemeSize = 1;
+    }
+
+    if (type == TOKEN_NEWLINE) {
+        ls->line++;
+        ls->col = 0;
+    } else {
+        ls->col++;
     }
 
     ls->prevCh = ch;
@@ -158,8 +165,6 @@ static void lexer_finish(LexerState* ls) {
     node = create_token_node(TOKEN_EOF, NULL, 0);
     list_connect(ls->tail, node);
     ls->tail = node;
-
-    ls->status = LEXER_STATUS_FINISHED;
 }
 
 /* Perform an iteration at the cursor of the given source. */
@@ -176,28 +181,33 @@ static void cgpl_lexer_next(LexerState* ls) {
 }
 
 /* Initialize everything non-source related. */
-static inline void init_state_base(LexerState* ls) {
+static void init_state_base(LexerState* ls) {
     if (ls == NULL) ERROR_UNEXPECTED_NULL_PTR;
     memset(ls->lexemeBuffer, '\0', CGPL_LEXEME_MAX_SIZE);
-    ls->lexemeSize = 0;
+    ls->lexemeSize = ls->line = ls->col = 0;
     ls->head = ls->tail = NULL;
-    ls->status = LEXER_STATUS_READY;
     ls->prevType = TOKEN_NA;
     ls->prevCh = '\0';
+    ls->src.type = CGPL_SOURCE_LIMIT;
 }
 
 Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size) {
     Token* token = (Token*)malloc(sizeof(Token));
     if (token == NULL) ERROR_BAD_ALLOC;
     token->type = type;
-    if (size == 0 || lexemeBuffer == NULL) {
-        memset(token->lexemeBuffer, '\0', CGPL_LEXEME_MAX_SIZE);
-        token->size = 0;
-    }
-    else {
-        memcpy(token->lexemeBuffer, lexemeBuffer, size);
-        memset(token->lexemeBuffer + size, '\0', CGPL_LEXEME_MAX_SIZE - size);
-        token->size = size;
+    switch (type) {
+        case TOKEN_NUMERIC:
+            char* end;
+            token->sem.num = strtod(lexemeBuffer, &end);
+            if (lexemeBuffer == end) cgpl_error_fatal("Bad double value");
+            break;
+        case TOKEN_WORD:
+            // TODO
+            break;
+        case TOKEN_KEYWORD_BOOL:
+            // TODO
+        default:
+            break;
     }
     return token;
 }
@@ -218,19 +228,31 @@ void cgpl_lexer_init_state_string(LexerState* ls, char* ptr, size_t size) {
     ls->src.sbuffer.cursor = 0;
 }
 
-void cgpl_lexer_tokenize(LexerState *ls) {
-    if (ls->src.type < CGPL_SOURCE_FILE || ls->src.type > CGPL_SOURCE_STRING) cgpl_error_fatal("Bad source type");
-    if (ls->status == LEXER_STATUS_FINISHED) {
-        cgpl_warning("Attempted to tokenize a finished lexer state instance.");
-        return;
-    }
+#define CGPL_EXTENSION ".cgpl"
+static bool check_extension(const char *path)
+{
+    const char* extension = strrchr(path, '.');
+    if (extension == NULL) return false;
+    return strcmp(extension, CGPL_EXTENSION) == 0;
+}
 
-    /* Prevent a potential leak */
-    if (ls->head != NULL) list_free_standalone_cascade(ls->head);
-    ls->status = LEXER_STATUS_IN_PROGRESS;
+List_Node* cgpl_lexer_tokenize(char* source) { 
+    LexerState ls;
+    FILE* fp = NULL;
+
+    if (check_extension(source)) {
+        fp = fopen(source, "r");
+        if (fp == NULL) cgpl_error_fatal("Failed to open source file.");
+        cgpl_lexer_init_state_file(&ls, fp);
+    } else {
+        cgpl_lexer_init_state_string(&ls, source, strlen(source));
+    }
+    if (ls.src.type < CGPL_SOURCE_FILE || ls.src.type > CGPL_SOURCE_STRING) cgpl_error_fatal("Bad source type");
 
     /* Begin */
-    cgpl_lexer_next(ls);
+    cgpl_lexer_next(&ls);
+    if (fp != NULL) fclose(fp);
+    return ls.head;
 }
 
 const char* cgpl_lexer_token_tostring(const token_t type) {
@@ -281,9 +303,9 @@ const char* cgpl_lexer_print_token(const List_Node* node) {
     static char buffer[CGPL_LEXEME_MAX_SIZE] = {'\0'};
     if (node->data != NULL) {
         Token* token = (Token*)node->data;
-        sprintf(buffer, "Token (%s): %s", cgpl_lexer_token_tostring(token->type), token->lexemeBuffer[0] == '\0' ? "???" : token->lexemeBuffer);
+        sprintf(buffer, "Token (%s)", cgpl_lexer_token_tostring(token->type));
     } else {
-        sprintf(buffer, "Token (%s): N/A", cgpl_lexer_token_tostring(TOKEN_NA));
+        sprintf(buffer, "Token (%s)", cgpl_lexer_token_tostring(TOKEN_NA));
     }
     return buffer;
 }

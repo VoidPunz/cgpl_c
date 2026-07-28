@@ -5,14 +5,16 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "stringview.h"
 #include "utils.h"
 #include "list.h"
 #include "types.h"
 #include "debug.h"
 
-#define CGPL_LEXEME_MAX_SIZE 65 // + 1 for '\0'
+#define CGPL_LEXEME_MAX_SIZE 64
 #define CGPL_KEYWORD_BUFFER static const char
 #define IS_TOKEN(n) (n >= TOKEN_SOF && n < TOKEN_LIMIT)
+#define IS_WHITESPACE(n) (n >= TOKEN_WHITESPACE && n <= TOKEN_TAB)
 
 typedef enum {
     /* Non-applicable */
@@ -31,6 +33,8 @@ typedef enum {
     TOKEN_ASCII,
     /* ([A-Z][a-z])*([0-9])* */
     TOKEN_WORD,
+    /* A boolean value (keywords true/false)*/
+    TOKEN_KEYWORD_BOOL,
     /* 'var' keyword */
     TOKEN_KEYWORD_VAR,
     /* '=' */
@@ -50,18 +54,16 @@ typedef enum {
     TOKEN_LIMIT
 } token_t;
 
-typedef struct {
-    char lexemeBuffer[CGPL_LEXEME_MAX_SIZE];
-    token_t type;
-    uint32_t size;
-} Token;
+typedef union {
+    cgpl_number_t num;
+    cgpl_string_t word;
+    cgpl_bool_t b;
+} SemanticValue;
 
-typedef enum {
-    LEXER_STATUS_READY = 0,
-    LEXER_STATUS_IN_PROGRESS,
-    LEXER_STATUS_FINISHED,
-    LEXER_STATUS_LIMIT
-} lexer_status;
+typedef struct {
+    token_t type;
+    SemanticValue sem;
+} Token;
 
 /* Lexer state object. Use either cgpl_lexer_init_state_file or cgpl_lexer_init_state_string to initialize depending on the corresponding source. */
 typedef struct {
@@ -86,16 +88,18 @@ typedef struct {
             CGPL_SOURCE_LIMIT
         } type;
     } src;
-    /* Temporary lexeme buffer */
+    /* Temporary lexeme */
     char lexemeBuffer[CGPL_LEXEME_MAX_SIZE];
-    /* Currnent size of the lexeme buffer */
+    /* Lexeme size */
     size_t lexemeSize;
+    /* The current line */
+    size_t line;
+    /* Column of the line */
+    size_t col;
     /* Head node of the list of tokens. This will always be an SOF token. */
     List_Node *head;
     /* Tail node of the list of tokens. */
     List_Node* tail;
-    /* The current status of the lexer state. */
-    lexer_status status;
     /* The token type yielded from the previous iteration. */
     token_t prevType;
     /* The previous iteration's character. */
@@ -105,7 +109,7 @@ typedef struct {
 /* Tuple structure for keywords */
 typedef struct {
     /* Keyword string */
-    const char* keyword;
+    const String_View keyword;
     /* Type for the associated keyword */
     token_t type;
 } KeywordTuple;
@@ -118,13 +122,17 @@ Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size);
 void cgpl_lexer_init_state_file(LexerState* ls, FILE* fp);
 /* Initialize a lexer state with a string source. */
 void cgpl_lexer_init_state_string(LexerState* ls, char* sp, size_t ss);
-/* Tokenizes a ready lexer state by modifying the provided pointer. See the results using ls->status and ls->head. Do NOT call list_free_cascading with the list nodes stored in the structure, use list_free_standalone_cascade instead, as the data are just enum values stored as void pointers. */
-void cgpl_lexer_tokenize(LexerState* ls);
+/* Tokenizes a source (either a file with .cgpl extension or raw string) and returns a list of tokens. */
+List_Node* cgpl_lexer_tokenize(char* source);
 /* Converts a token type to a string */
 const char* cgpl_lexer_token_tostring(const token_t type);
 /* Peek the next character in the file. */
 int file_peek(FILE* fp);
 /* Printer function for lists using tokens as data */
 const char* cgpl_lexer_print_token(const List_Node* node);
+/* Shorthand for grabbing the token value from a node */
+static inline Token* get_token(List_Node* node) {
+    return (Token*)node->data;
+}
 
 #endif /* CGPL_LEXER_H_ */

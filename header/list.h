@@ -2,8 +2,11 @@
 #define CGPL_LIST_H_
 
 #include <stdlib.h>
+#include <string.h>
 #include "error.h"
 #include "debug.h"
+
+#define CGPL_PRINT_BUFFER_SIZE 100
 
 typedef struct List_Node {
     void* data;
@@ -28,7 +31,7 @@ void list_free_cascade(List_Node* node);
 void list_free(List_Node* node);
 /* Cascadingly free all the nodes in the list without deallocating the associated data. */
 void list_free_standalone_cascade(List_Node* node);
-/* Frees just the node without deallocating the associated data. */
+/* Frees just the node without deallocating the associated data and without cascading. */
 void list_free_standalone(List_Node* node);
 #ifdef DEBUG
 /* Print a list of nodes using a given printer function. The supplied node can never be NULL. */

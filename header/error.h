@@ -16,7 +16,7 @@
 #define WARNING_UNEXPECTED_NULL_PTR cgpl_warning("Bad ptr")
 
 static inline void cgpl_error_fatal(const char* format, ...) {
-    printf(TERMINAL_COLOR_RED "FATAL: ");
+    printf(TERMINAL_COLOR_RED "%s:%d: FATAL: ", __FILE__, __LINE__);
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -26,7 +26,7 @@ static inline void cgpl_error_fatal(const char* format, ...) {
 }
 
 static inline void cgpl_warning(const char* format, ...) {
-    printf(TERMINAL_COLOR_GREY "WARNING: ");
+    printf(TERMINAL_COLOR_GREY "%s:%d: WARNING: ", __FILE__, __LINE__);
     va_list args;
     va_start(args, format);
     vprintf(format, args);
