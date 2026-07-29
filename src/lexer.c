@@ -126,7 +126,7 @@ static void insert_node(LexerState* ls, char ch) {
     if (ls->lexemeSize + 1 >= CGPL_LEXEME_MAX_SIZE) cgpl_error_fatal("Lexeme grew too large (Max %d characters)", CGPL_LEXEME_MAX_SIZE);
     ls->lexemeBuffer[ls->lexemeSize++] = ch;
 
-    DEBUG_PRINT("%c - %s | %s - %s\n", ch, ls->lexemeBuffer, cgpl_lexer_token_tostring(ls->prevType), cgpl_lexer_token_tostring(type));
+    DEBUG_PRINT("%c - %s | %s - %s\n", ch, ls->lexemeBuffer, cgpl_token_tostring[ls->prevType], cgpl_token_tostring[type]);
     if (ls->prevType != TOKEN_NA && ls->prevType != type || is_end(ls)) {
         node = create_token_node(ls->prevType, ls->lexemeBuffer, ls->lexemeSize);
         if (ls->head == NULL) {
@@ -138,7 +138,7 @@ static void insert_node(LexerState* ls, char ch) {
             list_connect(ls->tail, node);
             ls->tail = node;
         }
-        DEBUG_PRINT("Token created: %s, %s\n", cgpl_lexer_token_tostring(ls->prevType), cgpl_lexer_token_tostring(type));
+        DEBUG_PRINT("Token created: %s, %s\n", cgpl_token_tostring[ls->prevType], cgpl_token_tostring[type]);
         if (ls->lexemeSize > 0) memset(ls->lexemeBuffer + 1, '\0', CGPL_LEXEME_MAX_SIZE - 1);
         ls->lexemeBuffer[0] = ch;
         ls->lexemeSize = 1;
@@ -255,44 +255,6 @@ List_Node* cgpl_lexer_tokenize(char* source) {
     return ls.head;
 }
 
-const char* cgpl_lexer_token_tostring(const token_t type) {
-    switch (type) {
-        case TOKEN_WHITESPACE:
-            return "TOKEN_WHITESPACE";
-        case TOKEN_NEWLINE:
-            return "TOKEN_NEWLINE";
-        case TOKEN_TAB:
-            return "TOKEN_TAB";
-        case TOKEN_SOF:
-            return "TOKEN_SOF";
-        case TOKEN_NUMERIC:
-            return "TOKEN_NUMERIC";
-        case TOKEN_ASCII:
-            return "TOKEN_ASCII";
-        case TOKEN_WORD:
-            return "TOKEN_WORD";
-        case TOKEN_KEYWORD_VAR:
-            return "TOKEN_KEYWORD_VAR";
-        case TOKEN_EQUALS:
-            return "TOKEN_EQUALS";
-        case '+':
-            return "TOKEN_CROSS";
-        case '-':
-            return "TOKEN_DASH";
-        case '*':
-            return "TOKEN_ASTERISK";
-        case '/':
-            return "TOKEN_FSLASH";
-        case '%':
-            return "TOKEN_PERCENT";
-        case TOKEN_EOF:
-            return "TOKEN_EOF";
-        case TOKEN_NA:
-        default:
-            return "TOKEN_NA";
-    }
-}
-
 int file_peek(FILE* fp) {
     int ch = fgetc(fp);
     if (ch != EOF) ungetc(ch, fp);
@@ -303,9 +265,9 @@ const char* cgpl_lexer_print_token(const List_Node* node) {
     static char buffer[CGPL_LEXEME_MAX_SIZE] = {'\0'};
     if (node->data != NULL) {
         Token* token = (Token*)node->data;
-        sprintf(buffer, "Token (%s)", cgpl_lexer_token_tostring(token->type));
+        sprintf(buffer, "Token (%s)", cgpl_token_tostring[token->type]);
     } else {
-        sprintf(buffer, "Token (%s)", cgpl_lexer_token_tostring(TOKEN_NA));
+        sprintf(buffer, "Token (%s)", cgpl_token_tostring[TOKEN_NA]);
     }
     return buffer;
 }

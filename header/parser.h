@@ -7,18 +7,25 @@
 #define SYNTAX_ERROR(msg) cgpl_error_fatal("Syntax error: %s", msg)
 
 #ifdef DEBUG
-    #define DEBUG_PARSER(id, rest, node) DEBUG_PRINT("%s: [rest: %s - %d, node: %s - %d]\n", id, cgpl_lexer_token_tostring(get_token(*rest)->type), list_count(*rest), cgpl_lexer_token_tostring(get_token(node)->type), list_count(node))
+    #define DEBUG_PARSER(id, rest, node) DEBUG_PRINT("%s: [rest: %s - %d, node: %s - %d]\n", id, cgpl_token_tostring[get_token(*rest)->type], list_count(*rest), cgpl_token_tostring[get_token(node)->type], list_count(node))
 #else
     #define DEBUG_PARSER(id, rest, node)
 #endif
 
+/* X-macro for AST kinds */
+#define AST_KIND_LIST(X)    \
+    X(CGPL_AST_VARDECL)     \
+    X(CGPL_AST_ASSIGN)      \
+    X(CGPL_AST_VALUE)       \
+    X(CGPL_AST_LIMIT)       \
+
 typedef enum {
-    /* A variable declaration for a given symbol */
-    CGPL_AST_VARDECL,
-    CGPL_AST_ASSIGN,
-    CGPL_AST_VALUE,
-    CGPL_AST_LIMIT
+    AST_KIND_LIST(GENERATE_ENUM)
 } ast_kind_t;
+
+static const char* ast_kind_tostring[] = {
+    AST_KIND_LIST(GENERATE_STRING)
+};
 
 typedef struct Ast_Node {
     /* Pointer to the associated token (which may contain any semantic information) relevant to this AST kind */
@@ -33,5 +40,7 @@ typedef struct Ast_Node {
 Ast_Node* cgpl_parse(List_Node* tokenNode);
 /* Allocate a new AST node on the heap. */
 Ast_Node* cgpl_ast_new(const Token* token, ast_kind_t kind);
+/* Prints the AST tree. */
+void cgpl_ast_print(Ast_Node* ast);
 
 #endif

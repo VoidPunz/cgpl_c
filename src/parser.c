@@ -110,3 +110,12 @@ Ast_Node* cgpl_ast_new(const Token* token, ast_kind_t kind) {
     node->kind = CGPL_AST_LIMIT;
     return node;
 }
+
+static void cgpl_ast_print_internal(Ast_Node* ast, size_t c) {
+    for (size_t i = 0; i < c; i++) putchar('\t');
+}
+
+void cgpl_ast_print(Ast_Node* ast) {
+    static size_t c = 0;
+
+}

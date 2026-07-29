@@ -16,43 +16,33 @@
 #define IS_TOKEN(n) (n >= TOKEN_SOF && n < TOKEN_LIMIT)
 #define IS_WHITESPACE(n) (n >= TOKEN_WHITESPACE && n <= TOKEN_TAB)
 
+#define TOKEN_TYPE_LIST(X)  \
+    X(TOKEN_NA)             \
+    X(TOKEN_SOF)            \
+    X(TOKEN_WHITESPACE)     \
+    X(TOKEN_NEWLINE)        \
+    X(TOKEN_TAB)            \
+    X(TOKEN_NUMERIC)        \
+    X(TOKEN_ASCII)          \
+    X(TOKEN_WORD)           \
+    X(TOKEN_KEYWORD_BOOL)   \
+    X(TOKEN_KEYWORD_VAR)    \
+    X(TOKEN_EQUALS)         \
+    X(TOKEN_CROSS)          \
+    X(TOKEN_DASH)           \
+    X(TOKEN_ASTERISK)       \
+    X(TOKEN_FSLASH)         \
+    X(TOKEN_PERCENT)        \
+    X(TOKEN_EOF)            \
+    X(TOKEN_LIMIT)          \
+
 typedef enum {
-    /* Non-applicable */
-    TOKEN_NA = 0x40,
-    /* Start of function */
-    TOKEN_SOF,
-    /* Whitespace ' ' */
-    TOKEN_WHITESPACE,
-    /* Newline '\n' */
-    TOKEN_NEWLINE,
-    /* Tab \t */
-    TOKEN_TAB,
-    /* A numeric value (0-9)* */
-    TOKEN_NUMERIC,
-    /* ASCII characters ([A-Z][a-z])* */
-    TOKEN_ASCII,
-    /* ([A-Z][a-z])*([0-9])* */
-    TOKEN_WORD,
-    /* A boolean value (keywords true/false)*/
-    TOKEN_KEYWORD_BOOL,
-    /* 'var' keyword */
-    TOKEN_KEYWORD_VAR,
-    /* '=' */
-    TOKEN_EQUALS,
-    /* '+' */
-    TOKEN_CROSS,
-    /* '-' */
-    TOKEN_DASH,
-    /* '*' */
-    TOKEN_ASTERISK,
-    /* '/' */
-    TOKEN_FSLASH,
-    /* '%' */
-    TOKEN_PERCENT,
-    /* End of function */
-    TOKEN_EOF,
-    TOKEN_LIMIT
+    TOKEN_TYPE_LIST(GENERATE_ENUM)
 } token_t;
+
+static const char* cgpl_token_tostring[] = {
+    TOKEN_TYPE_LIST(GENERATE_STRING)
+};
 
 typedef union {
     cgpl_number_t num;
@@ -124,8 +114,6 @@ void cgpl_lexer_init_state_file(LexerState* ls, FILE* fp);
 void cgpl_lexer_init_state_string(LexerState* ls, char* sp, size_t ss);
 /* Tokenizes a source (either a file with .cgpl extension or raw string) and returns a list of tokens. */
 List_Node* cgpl_lexer_tokenize(char* source);
-/* Converts a token type to a string */
-const char* cgpl_lexer_token_tostring(const token_t type);
 /* Peek the next character in the file. */
 int file_peek(FILE* fp);
 /* Printer function for lists using tokens as data */
