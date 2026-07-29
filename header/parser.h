@@ -7,13 +7,13 @@
 #define SYNTAX_ERROR(msg) cgpl_error_fatal("Syntax error: %s", msg)
 
 #ifdef DEBUG
-    #define DEBUG_PARSER(id, rest, node) DEBUG_PRINT("%s: [rest: %s - %d, node: %s - %d]\n", id, cgpl_token_tostring[get_token(*rest)->type], list_count(*rest), cgpl_token_tostring[get_token(node)->type], list_count(node))
+    #define DEBUG_PARSER(id, rest) DEBUG_PRINT("%s: [rest: %s - %d]\n", id, cgpl_token_tostring[get_token(*rest)->type], list_count(*rest))
 #else
-    #define DEBUG_PARSER(id, rest, node)
+    #define DEBUG_PARSER(id, rest)
 #endif
 
-/* X-macro for AST kinds */
 #define AST_KIND_LIST(X)    \
+    X(CGPL_AST_INSTRUCTION) \
     X(CGPL_AST_VARDECL)     \
     X(CGPL_AST_ASSIGN)      \
     X(CGPL_AST_VALUE)       \

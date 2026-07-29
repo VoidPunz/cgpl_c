@@ -4,11 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-
-/* ANSII */
-#define TERMINAL_COLOR_RED "\033[31m"
-#define TERMINAL_COLOR_GREY "\033[90m"
-#define TERMINAL_COLOR_DEFAULT "\033[0m"
+#include "ansii.h"
 
 #define ERROR_BAD_ALLOC cgpl_error_fatal("Bad allocation")
 #define ERROR_UNEXPECTED_NULL_PTR cgpl_error_fatal("Bad ptr")

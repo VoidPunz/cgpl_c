@@ -1,0 +1,10 @@
+#ifndef CGPL_ANSII_H_
+#define CGPL_ANSII_H_
+
+#define TERMINAL_COLOR_RED "\033[31m"
+#define TERMINAL_COLOR_GREY "\033[90m"
+#define TERMINAL_COLOR_ORANGE "\033[38;5;214m"
+
+#define TERMINAL_COLOR_DEFAULT "\033[0m"
+
+#endif

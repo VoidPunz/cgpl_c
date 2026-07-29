@@ -24,6 +24,9 @@ int main(int argc, char* argv[]) {
     #endif
     Ast_Node* astHead = cgpl_parse(tokenHead);
     list_free(tokenHead);
+    #ifdef DEBUG
+        cgpl_ast_print(astHead);
+    #endif
     // TODO: free ast
 
     /* Finish */
