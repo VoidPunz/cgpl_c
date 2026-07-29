@@ -1,5 +1,5 @@
 #ifndef CGPL_PARSER_H_
-#define CGPL_PARSER_H
+#define CGPL_PARSER_H_
 
 #include "list.h"
 #include "lexer.h"

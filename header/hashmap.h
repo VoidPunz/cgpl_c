@@ -1,6 +1,8 @@
 #ifndef CGPL_HASHMAP_H_
 #define CGPL_HASHMAP_H_
 
+#include <stddef.h>
+
 typedef struct {
     size_t key;
     void* value;
