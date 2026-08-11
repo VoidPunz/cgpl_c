@@ -5,9 +5,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "stringview.h"
+#include "ds/stringview.h"
+#include "ds/list.h"
 #include "utils.h"
-#include "list.h"
 #include "types.h"
 #include "debug.h"
 
@@ -44,6 +44,11 @@ static const char* cgpl_token_tostring[] = {
     TOKEN_TYPE_LIST(GENERATE_STRING)
 };
 
+#ifdef DEBUG
+   /* Printer function for lists using tokens as data */
+    const char* cgpl_lexer_print_token(const ListNode* node);
+#endif
+
 typedef union {
     cgpl_number_t num;
     cgpl_string_t word;
@@ -51,8 +56,9 @@ typedef union {
 } SemanticValue;
 
 typedef struct {
-    token_t type;
     SemanticValue sem;
+    token_t type;
+    int line, col;
 } Token;
 
 /* Lexer state object. Use either cgpl_lexer_init_state_file or cgpl_lexer_init_state_string to initialize depending on the corresponding source. */
@@ -87,9 +93,9 @@ typedef struct {
     /* Column of the line */
     size_t col;
     /* Head node of the list of tokens. This will always be an SOF token. */
-    List_Node *head;
+    ListNode *head;
     /* Tail node of the list of tokens. */
-    List_Node* tail;
+    ListNode* tail;
     /* The token type yielded from the previous iteration. */
     token_t prevType;
     /* The previous iteration's character. */
@@ -99,7 +105,7 @@ typedef struct {
 /* Tuple structure for keywords */
 typedef struct {
     /* Keyword string */
-    const String_View keyword;
+    const StringView keyword;
     /* Type for the associated keyword */
     token_t type;
 } KeywordTuple;
@@ -113,13 +119,9 @@ void cgpl_lexer_init_state_file(LexerState* ls, FILE* fp);
 /* Initialize a lexer state with a string source. */
 void cgpl_lexer_init_state_string(LexerState* ls, char* sp, size_t ss);
 /* Tokenizes a source (either a file with .cgpl extension or raw string) and returns a list of tokens. */
-List_Node* cgpl_lexer_tokenize(char* source);
-/* Peek the next character in the file. */
-int file_peek(FILE* fp);
-/* Printer function for lists using tokens as data */
-const char* cgpl_lexer_print_token(const List_Node* node);
+ListNode* cgpl_lexer_tokenize(char* source);
 /* Shorthand for grabbing the token value from a node */
-static inline Token* get_token(List_Node* node) {
+static inline Token* get_token(ListNode* node) {
     return (Token*)node->data;
 }
 

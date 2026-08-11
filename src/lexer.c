@@ -6,6 +6,13 @@ const KeywordTuple g_Keywords[] = {
     {.type = TOKEN_KEYWORD_BOOL, .keyword = SV_CT("false")},
 };
 
+/* Peeks the next character on a given file buffer. Returns EOF if nothing was found. */
+static int file_peek(FILE* fp) {
+    int ch = fgetc(fp);
+    if (ch != EOF) ungetc(ch, fp);
+    return ch;
+}
+
 /* Checks if a lexeme is a digit (0-9)* */
 static inline token_t is_digit(char ch) {
     return (ch >= '0' && ch <= '9') ? TOKEN_NUMERIC : TOKEN_NA;
@@ -21,7 +28,7 @@ static token_t is_keyword(LexerState* ls, char ch) {
     static uint32_t size = 0;
     for (size_t i = 0; i < CGPL_ARRAY_SIZE(g_Keywords); i++) {
         const KeywordTuple* tuple = &g_Keywords[i];
-        if (size > CGPL_ARRAY_SIZE(tuple->keyword.cstr) - 1) break;
+        if (size > sizeof(tuple->keyword.cstr) - 1) break;
 
         /* Ensure a numeric value does not precede the current word */
         if (is_digit(ls->prevCh) != TOKEN_NA) return TOKEN_WORD;
@@ -35,7 +42,7 @@ static token_t is_keyword(LexerState* ls, char ch) {
         } else
         #endif
         
-        if (size == CGPL_ARRAY_SIZE(tuple->keyword.cstr) - 1) {
+        if (size == sizeof(tuple->keyword.cstr) - 1) {
             DEBUG_PRINT("KEYWORD CHECK: %s, %c\n", tuple->keyword.cstr, ch);
             if (res) size = 0;
         }
@@ -88,7 +95,7 @@ static inline token_t is_operation(char ch) {
     }
 }
 
-static inline List_Node* create_token_node(token_t type, char* lexemeBuffer, size_t size) {
+static inline ListNode* create_token_node(token_t type, char* lexemeBuffer, size_t size) {
     return list_new(cgpl_new_token(type, lexemeBuffer, size));
 }
 
@@ -116,7 +123,7 @@ static int is_end(LexerState* ls) {
 static void insert_node(LexerState* ls, char ch) {
     /* Create token and list node */
     token_t type = TOKEN_NA;
-    List_Node* node = NULL;
+    ListNode* node = NULL;
 
     /* Lexically analyse the character, if none succeed throw a bad token error */
     if ((type = is_whitespace(ch)) == TOKEN_NA && (type = is_operation(ch)) == TOKEN_NA && (type = is_word(ls, ch)) == TOKEN_NA && (type = is_digit(ch)) == TOKEN_NA) {
@@ -127,7 +134,7 @@ static void insert_node(LexerState* ls, char ch) {
     ls->lexemeBuffer[ls->lexemeSize++] = ch;
 
     DEBUG_PRINT("%c - %s | %s - %s\n", ch, ls->lexemeBuffer, cgpl_token_tostring[ls->prevType], cgpl_token_tostring[type]);
-    if (ls->prevType != TOKEN_NA && ls->prevType != type || is_end(ls)) {
+    if ((ls->prevType != TOKEN_NA && ls->prevType != type) || is_end(ls)) {
         node = create_token_node(ls->prevType, ls->lexemeBuffer, ls->lexemeSize);
         if (ls->head == NULL) {
             ls->head = node;
@@ -157,7 +164,7 @@ static void insert_node(LexerState* ls, char ch) {
 
 static void lexer_finish(LexerState* ls) {
     /* Create SOF node and replace as head node */
-    List_Node* node = create_token_node(TOKEN_SOF, NULL, 0);
+    ListNode* node = create_token_node(TOKEN_SOF, NULL, 0);
     list_connect(node, ls->head);
     ls->head = node;
 
@@ -195,6 +202,8 @@ Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size) {
     Token* token = (Token*)malloc(sizeof(Token));
     if (token == NULL) ERROR_BAD_ALLOC;
     token->type = type;
+    token->line = 0;
+    token->col = 0;
     switch (type) {
         case TOKEN_NUMERIC:
             char* end;
@@ -236,7 +245,7 @@ static bool check_extension(const char *path)
     return strcmp(extension, CGPL_EXTENSION) == 0;
 }
 
-List_Node* cgpl_lexer_tokenize(char* source) { 
+ListNode* cgpl_lexer_tokenize(char* source) { 
     LexerState ls;
     FILE* fp = NULL;
 
@@ -255,19 +264,15 @@ List_Node* cgpl_lexer_tokenize(char* source) {
     return ls.head;
 }
 
-int file_peek(FILE* fp) {
-    int ch = fgetc(fp);
-    if (ch != EOF) ungetc(ch, fp);
-    return ch;
-}
-
-const char* cgpl_lexer_print_token(const List_Node* node) {
-    static char buffer[CGPL_LEXEME_MAX_SIZE] = {'\0'};
-    if (node->data != NULL) {
-        Token* token = (Token*)node->data;
-        sprintf(buffer, "Token (%s)", cgpl_token_tostring[token->type]);
-    } else {
-        sprintf(buffer, "Token (%s)", cgpl_token_tostring[TOKEN_NA]);
+#ifdef DEBUG
+    const char* cgpl_lexer_print_token(const ListNode* node) {
+        static char buffer[CGPL_LEXEME_MAX_SIZE] = {'\0'};
+        if (node->data != NULL) {
+            const Token* token = (Token*)node->data;
+            sprintf(buffer, "Token (%s)", cgpl_token_tostring[token->type]);
+        } else {
+            sprintf(buffer, "Token (%s)", cgpl_token_tostring[TOKEN_NA]);
+        }
+        return buffer;
     }
-    return buffer;
-}
+#endif

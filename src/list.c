@@ -1,14 +1,14 @@
-#include "../header/list.h"
+#include "../header/ds/list.h"
 
-List_Node* list_new(void* data) {
-    List_Node* node = (List_Node*)malloc(sizeof(List_Node));
+ListNode* list_new(void* data) {
+    ListNode* node = (ListNode*)malloc(sizeof(ListNode));
     if (node == NULL) ERROR_BAD_ALLOC;
     node->data = data;
     node->next = NULL;
     return node;
 }
 
-size_t list_count(List_Node* node) {
+size_t list_count(ListNode* node) {
     size_t c = 0;
     while (node != NULL) {
         c++;
@@ -17,7 +17,7 @@ size_t list_count(List_Node* node) {
     return c;
 }
 
-void list_append(List_Node* node, List_Node* appendNode) {
+void list_append(ListNode* node, ListNode* appendNode) {
     if (node == NULL) return;
     while (node->next != NULL) {
         node = node->next;
@@ -25,8 +25,8 @@ void list_append(List_Node* node, List_Node* appendNode) {
     node->next = appendNode;
 }
 
-void list_free_cascade(List_Node* node) {
-    List_Node* tempNode = NULL;
+void list_free_cascade(ListNode* node) {
+    ListNode* tempNode = NULL;
     while (node != NULL) {
         tempNode = node->next;
         list_free(node);
@@ -34,15 +34,15 @@ void list_free_cascade(List_Node* node) {
     }
 }
 
-void list_free(List_Node* node) {
+void list_free(ListNode* node) {
     if (node == NULL) return;
     if (node->data != NULL) free(node->data);
     node->next = NULL;
     free(node);
 }
 
-void list_free_standalone_cascade(List_Node* node) {
-    List_Node* tempNode = NULL;
+void list_free_standalone_cascade(ListNode* node) {
+    ListNode* tempNode = NULL;
     while (node != NULL) {
         tempNode = node->next;
         list_free_standalone(node);
@@ -50,7 +50,7 @@ void list_free_standalone_cascade(List_Node* node) {
     }
 }
 
-void list_free_standalone(List_Node* node) {
+void list_free_standalone(ListNode* node) {
     if (node == NULL) return;
     node->next = NULL;
     free(node);

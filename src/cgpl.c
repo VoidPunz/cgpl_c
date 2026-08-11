@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     #ifdef DEBUG
         printf("Beginning tokenization...\n");
     #endif
-    List_Node* tokenHead = cgpl_lexer_tokenize(source);
+    ListNode* tokenHead = cgpl_lexer_tokenize(source);
     #ifdef DEBUG
         printf("Finished tokenization! Printing tokens...\n");
         list_print(tokenHead, cgpl_lexer_print_token);
