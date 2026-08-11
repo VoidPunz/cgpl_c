@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "../header/parser.h"
+#include "../header/cgplstate.h"
 
 int main(int argc, char* argv[]) {
     /* Check source */
@@ -27,6 +28,8 @@ int main(int argc, char* argv[]) {
     #ifdef DEBUG
         cgpl_ast_print(astHead);
     #endif
+    CGPLState state;
+    cgpl_state_init(&state);
     // TODO: free ast
 
     /* Finish */

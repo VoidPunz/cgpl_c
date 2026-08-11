@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #include "../utils.h"
 #include "../error.h"
 #include "../debug.h"
@@ -17,6 +18,7 @@ typedef struct HashPair {
     void* value;
 } HashPair;
 
+/* An open adress hashmap using double hashing and the 32-bit FNV1a algorithim (enhanced double hashing). Capacity should always be a prime number to be compatible with double hashing. */
 typedef struct {
     /* Current size of the map */
     hash_size_t size;
@@ -26,11 +28,9 @@ typedef struct {
     HashPair* pairs;
 } HashMap;
 
-extern hash_size_t g_PrimeLookup[];
-
-/* Initialize a hashmap with a given capacity. IMPORTANT: The capacity should always be a prime number. */
+/* Initialize a hashmap with a given capacity. Note that the provided capacity will remain untouched if it is already a prime number, and will otherwise be rounded up to the next closest prime number. */
 void hashmap_init(HashMap* map, hash_size_t capacity);
-HashPair* hashmap_insert(HashMap* map, const char* key, void* value);
+HashPair* hashmap_update(HashMap* map, const char* key, void* value);
 HashPair* hashmap_get(HashMap* map, const char* key);
 static inline void hashmap_free(HashMap* map) {
     free(map->pairs);
