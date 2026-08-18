@@ -29,7 +29,7 @@ define run_test
 		(printf "$(COL_FAIL)$(1): FAIL\n$(COL_RESET)" && $(CAT) test_run.log && $(RM) test_run.log && exit 1)
 endef
 
-all: $(BIN)
+all: $(BIN) clean
 
 test_hashmap$(EXE): test_hashmap.c hashmap.o
 test_list$(EXE): test_list.c list.o

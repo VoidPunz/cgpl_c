@@ -16,7 +16,7 @@
 #define RUN_TEST(func, obj, ...) { \
     TEST_CONFIG((obj)) \
     printf(TERMINAL_COLOR_YELLOW "\tRunning \"%s\"...\n" TERMINAL_COLOR_DEFAULT, #func); \
-    func(&(obj), ##__VA_ARGS__); \
+    func((obj), ##__VA_ARGS__); \
     printf(TERMINAL_COLOR_YELLOW "\tSuccess!\n" TERMINAL_COLOR_DEFAULT); \
     TEST_RESET((obj)) \
     }

@@ -7,9 +7,9 @@
 
 #undef TEST_CONFIG
 #define TEST_CONFIG(map) \
-    map.isResizable = IS_RESIZABLE; \
-    if (SHOULD_RESIZE) hashmap_resize(&map, TEST_HASHMAP_DEFAULT_CAPACITY); \
-    if (SHOULD_CLEAR) hashmap_clear(&map); \
+    map->isResizable = IS_RESIZABLE; \
+    if (SHOULD_RESIZE) hashmap_resize(map, TEST_HASHMAP_DEFAULT_CAPACITY); \
+    if (SHOULD_CLEAR) hashmap_clear(map); \
 
 #undef TEST_RESET
 #define TEST_RESET(map) \
@@ -119,17 +119,17 @@ int main() {
     // Run tests
     {
         SHOULD_RESIZE = false;
-        RUN_TEST(test_resize, map)
+        RUN_TEST(test_resize, &map)
     }
-    RUN_TEST(test_update, map)
+    RUN_TEST(test_update, &map)
     {
         SHOULD_RESIZE = false;
         IS_RESIZABLE = false;
-        RUN_TEST(test_clear, map)
+        RUN_TEST(test_clear, &map)
     }
     {
         SHOULD_RESIZE = false;
-        RUN_TEST(test_alphabet, map)
+        RUN_TEST(test_alphabet, &map)
     }
     return 0;
 }

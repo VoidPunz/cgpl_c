@@ -46,7 +46,7 @@ static hash_size_t enhanced_double_hash(HashPair** pairs, hash_size_t capacity, 
     const hash_size_t h1 = (hash_size_t)(h0 & 0xFFFFFFFF); // First 32 bits
     hash_size_t h2 = (hash_size_t)(h0 >> 32); // Last 32 bits
     if (h2 == 0) h2 = 1; // h2 must never be 0 or the following loop may be infinite
-    hash_size_t index = h1 % capacity;
+    hash_size_t index;
     size_t c = 1;
     HashPair* pair;
     while (true) {

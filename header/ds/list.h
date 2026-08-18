@@ -26,21 +26,18 @@ static inline void list_connect(ListNode* firstNode, ListNode* secondNode) {
 /* Appends a given node to the back of the list of a given root node. O(N) time complexity. */
 void list_append(ListNode* node, ListNode* appendNode);
 /* Frees all nodes from a given root node including the root node. Frees the dynamic data if any. */
-void list_free_cascade(ListNode* node);
+void list_free_cascade(ListNode** node);
 /* Frees the single node without cascading. Frees the dynamic data if any. */
-void list_free(ListNode* node);
+void list_free(ListNode** node);
 /* Cascadingly free all the nodes in the list without deallocating the associated data. */
-void list_free_standalone_cascade(ListNode* node);
+void list_free_standalone_cascade(ListNode** node);
 /* Frees just the node without deallocating the associated data and without cascading. */
-void list_free_standalone(ListNode* node);
+void list_free_standalone(ListNode** node);
 #ifdef DEBUG
 /* Print a list of nodes using a given printer function. The supplied node can never be NULL. */
-static void list_print(ListNode* node, const char* (*printer_ptr)(const ListNode*)) {
-        while (node != NULL) {
-        printf("%s\n", printer_ptr(node));
-        node = node->next;
-    }
-}
+void list_print(ListNode* node, const char* (*printer_ptr)(const ListNode*));
+
+void list_default_printer(const ListNode* node);
 #endif
 
 #endif /* CGPL_LIST_H_ */
