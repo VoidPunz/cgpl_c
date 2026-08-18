@@ -16,7 +16,7 @@ TEST_DIR = tests/unit_tests
 SRC = $(wildcard $(SRC_DIR)/*.c)
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-.PHONY = release debug test clean
+.PHONY: release debug test clean
 
 release: $(TARGET)
 
@@ -39,12 +39,10 @@ $(OBJ_DIR):
 	@printf "$(COL_RESET)"
 
 test:
-	@printf "$(COL_PRIMARY)"
-	$(MAKE) -C $(TEST_DIR) CFLAGS="$(_CFLAGS)"
 	@printf "$(COL_RESET)"
+	$(MAKE) -C $(TEST_DIR) _CFLAGS="$(_CFLAGS)"
 
 # del /q src\*.o $(TARGET) # Use this if on windows and not using VSC terminal or Powershell
 clean:
 	@printf "$(COL_PRIMARY)"
 	rm -f $(OBJ_DIR)/*.o $(TARGET)
-	@printf "$(COL_RESET)"

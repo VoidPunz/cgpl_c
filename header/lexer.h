@@ -58,7 +58,7 @@ typedef union {
 typedef struct {
     SemanticValue sem;
     token_t type;
-    int line, col;
+    uint32_t line, col;
 } Token;
 
 /* Lexer state object. Use either cgpl_lexer_init_state_file or cgpl_lexer_init_state_string to initialize depending on the corresponding source. */
@@ -113,7 +113,7 @@ typedef struct {
 /* Array of all the keywords in CGPL */
 extern const KeywordTuple g_Keywords[];
 /* Allocate a new token with a given type */
-Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size);
+Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size, uint32_t line, uint32_t col);
 /* Initialize a lexer state with a file source. */
 void cgpl_lexer_init_state_file(LexerState* ls, FILE* fp);
 /* Initialize a lexer state with a string source. */

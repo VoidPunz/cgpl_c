@@ -1,7 +1,8 @@
-#include <assert.h>
+#include "test_runner.h"
 #include "../../header/ds/list.h"
-#include "../../header/error.h"
 
 int main() {
+    FORCE_NEVER_SAVE_IN_BUFFER()
+    
     return 0;
 }

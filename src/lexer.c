@@ -30,12 +30,12 @@ static token_t is_keyword(LexerState* ls, char ch) {
         const KeywordTuple* tuple = &g_Keywords[i];
         if (size > sizeof(tuple->keyword.cstr) - 1) break;
 
-        /* Ensure a numeric value does not precede the current word */
+        // Ensure a numeric value does not precede the current word
         if (is_digit(ls->prevCh) != TOKEN_NA) return TOKEN_WORD;
 
         bool res = tuple->keyword.cstr[size++] == ch;
 
-        /* Check if this is the first character in a new lexeme. We can assume that the type for 'ch' is TOKEN_WORD */
+        // Check if this is the first character in a new lexeme. We can assume that the type for 'ch' is TOKEN_WORD
         #ifdef DEBUG
         if (ls->prevType != TOKEN_WORD && ls->prevType != tuple->type) {
             DEBUG_PRINT("New lexeme: %c\n", ch);
@@ -53,11 +53,11 @@ static token_t is_keyword(LexerState* ls, char ch) {
 
 /* Checks if a lexeme is a word ([A-Z][a-z])*([0-9])* */
 static inline token_t is_word(LexerState* ls, char ch) {
-    /* Control that if we see a digit, it's preceeded by an ascii or word token */
+    // Control that if we see a digit, it's preceeded by an ascii or word token
     if (is_digit(ch) == TOKEN_NUMERIC && ls->prevType == TOKEN_WORD) {
         return TOKEN_WORD;
     }
-    /* Otherwise just check if char is an ASCII and possibly a keyword */
+    // Otherwise just check if char is an ASCII and possibly a keyword
     return is_ascii(ch) == TOKEN_ASCII ? is_keyword(ls, ch) : TOKEN_NA;
 }
 
@@ -95,8 +95,8 @@ static inline token_t is_operation(char ch) {
     }
 }
 
-static inline ListNode* create_token_node(token_t type, char* lexemeBuffer, size_t size) {
-    return list_new(cgpl_new_token(type, lexemeBuffer, size));
+static inline ListNode* create_token_node(token_t type, char* lexemeBuffer, size_t size, uint32_t line, uint32_t col) {
+    return list_new(cgpl_new_token(type, lexemeBuffer, size, line, col));
 }
 
 static char get_char(LexerState* ls) {
@@ -121,11 +121,11 @@ static int is_end(LexerState* ls) {
 }
 
 static void insert_node(LexerState* ls, char ch) {
-    /* Create token and list node */
+    // Create token and list node
     token_t type = TOKEN_NA;
     ListNode* node = NULL;
 
-    /* Lexically analyse the character, if none succeed throw a bad token error */
+    // Lexically analyse the character, if none succeed throw a bad token error
     if ((type = is_whitespace(ch)) == TOKEN_NA && (type = is_operation(ch)) == TOKEN_NA && (type = is_word(ls, ch)) == TOKEN_NA && (type = is_digit(ch)) == TOKEN_NA) {
         cgpl_error_fatal("Bad token: (line: %d, col: %d) \"%c\"", ls->line, ls->col, ch);
     }
@@ -135,7 +135,7 @@ static void insert_node(LexerState* ls, char ch) {
 
     DEBUG_PRINT("%c - %s | %s - %s\n", ch, ls->lexemeBuffer, cgpl_token_tostring[ls->prevType], cgpl_token_tostring[type]);
     if ((ls->prevType != TOKEN_NA && ls->prevType != type) || is_end(ls)) {
-        node = create_token_node(ls->prevType, ls->lexemeBuffer, ls->lexemeSize);
+        node = create_token_node(ls->prevType, ls->lexemeBuffer, ls->lexemeSize, ls->line, ls->col);
         if (ls->head == NULL) {
             ls->head = node;
         } else if (ls->tail == NULL) {
@@ -163,22 +163,25 @@ static void insert_node(LexerState* ls, char ch) {
 }
 
 static void lexer_finish(LexerState* ls) {
-    /* Create SOF node and replace as head node */
-    ListNode* node = create_token_node(TOKEN_SOF, NULL, 0);
+    const size_t size = 0;
+    const uint32_t line = 0, col = 0;
+    
+    // Create SOF node and replace as head node
+    ListNode* node = create_token_node(TOKEN_SOF, NULL, size, line, col);
     list_connect(node, ls->head);
     ls->head = node;
 
-    /* Create EOF node and replace as tail node */
-    node = create_token_node(TOKEN_EOF, NULL, 0);
+    // Create EOF node and replace as tail node
+    node = create_token_node(TOKEN_EOF, NULL, size, line, col);
     list_connect(ls->tail, node);
     ls->tail = node;
 }
 
 /* Perform an iteration at the cursor of the given source. */
 static void cgpl_lexer_next(LexerState* ls) {
-    /* New scope to pop all used variables off the stack before any recursion */
+    // New scope to pop all used variables off the stack before any recursion
     {
-        /* Read character on cursor from source */
+        // Read character on cursor from source
         char ch = get_char(ls);
         if (ch == EOF) return lexer_finish(ls);
         insert_node(ls, ch);
@@ -198,12 +201,12 @@ static void init_state_base(LexerState* ls) {
     ls->src.type = CGPL_SOURCE_LIMIT;
 }
 
-Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size) {
+Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size, uint32_t line, uint32_t col) {
     Token* token = (Token*)malloc(sizeof(Token));
     if (token == NULL) ERROR_BAD_ALLOC;
     token->type = type;
-    token->line = 0;
-    token->col = 0;
+    token->line = line;
+    token->col = col;
     switch (type) {
         case TOKEN_NUMERIC:
             char* end;
@@ -258,7 +261,7 @@ ListNode* cgpl_lexer_tokenize(char* source) {
     }
     if (ls.src.type < CGPL_SOURCE_FILE || ls.src.type > CGPL_SOURCE_STRING) cgpl_error_fatal("Bad source type");
 
-    /* Begin */
+    // Begin
     cgpl_lexer_next(&ls);
     if (fp != NULL) fclose(fp);
     return ls.head;
