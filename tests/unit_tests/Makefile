@@ -23,7 +23,7 @@ BIN = $(SRC:.c=$(EXE)) # test_*.c -> test_.exe*
 .PHONY: all clean $(BIN)
 
 define run_test
-	@printf "$(COL_PRIMARY)Running test for file..."
+	@printf "$(COL_PRIMARY)Running test file..."
 	@./$(1) > test_run.log 2>&1 && \
 		(printf "$(COL_SUCCESS)$(1): SUCCESS\n$(COL_RESET)" && $(RM) test_run.log) || \
 		(printf "$(COL_FAIL)$(1): FAIL\n$(COL_RESET)" && $(CAT) test_run.log && $(RM) test_run.log && exit 1)

@@ -8,6 +8,7 @@
 #undef TEST_CONFIG
 #define TEST_CONFIG(map) \
     map->dynamic = IS_DYNAMIC; \
+    map->shrinking = IS_SHRINKING; \
     if (SHOULD_CLEAR) hashmap_clear(map); \
     if (SHOULD_RESIZE) hashmap_resize(map, TEST_HASHMAP_DEFAULT_CAPACITY); \
 
@@ -15,11 +16,21 @@
 #define TEST_RESET(map) \
     SHOULD_RESIZE = true; \
     SHOULD_CLEAR = true; \
-    IS_DYNAMIC = true;
+    IS_DYNAMIC = true; \
+    IS_SHRINKING = true;
 
 bool SHOULD_RESIZE = true;
 bool SHOULD_CLEAR = true;
 bool IS_DYNAMIC = true;
+bool IS_SHRINKING = true;
+
+#define EXPECT_SUCCESSFUL_RESIZE "Expected successful resize"
+#define EXPECT_SUCCESSFUL_INSERT "Expected successful insert"
+#define EXPECT_SUCCESSFUL_GET "Expected successful get"
+#define EXPECT_FAILED_INSERT "Expected failed insert"
+#define EXPECT_FAILED_GET "Expected failed get"
+#define EXPECT_CAPACITY_TO_MATCH_VALUE "Expected capacity to match value"
+#define EXPECT_SIZE_TO_MATCH_VALUE "Expected size to match value"
 
 #define CHECK_PAIR(pair, expectedKey, expectedValue) \
     assert(CHECK_STR(pair->key, expectedKey) && "Keys should match"); \
@@ -38,18 +49,17 @@ void test_update(HashMap* map) {
     void* expected = (void*)0x1000;
     HashPair* pair = NULL;
 
-    pair = hashmap_update(map, key, expected);
+    assert((pair = hashmap_update(map, key, expected)) != NULL && EXPECT_SUCCESSFUL_INSERT);
     CHECK_PAIR(pair, key, expected)
     assert(map->size == 1 && "Map size should be one");
 
     expected = (void*)0x2000;
-    pair = hashmap_update(map, key, expected);
+    assert((pair = hashmap_update(map, key, expected)) != NULL && EXPECT_SUCCESSFUL_INSERT);
     CHECK_PAIR(pair, key, expected)
     assert(map->size == 1 && "Map size should still be one");
 
     // Assert that we cannot insert into a NULL map
-    pair = hashmap_update(NULL, key, expected);
-    assert(pair == NULL && "Invalid map should return null");
+    assert((pair = hashmap_update(NULL, key, expected)) == NULL && EXPECT_FAILED_INSERT);
 }
 
 void test_get(HashMap* map) {
@@ -57,10 +67,9 @@ void test_get(HashMap* map) {
     void* expected = (void*)0x1000;
     HashPair* pair = NULL;
 
-    hashmap_update(map, key, expected);
-    pair = hashmap_get(map, key);
+    assert(hashmap_update(map, key, expected) != NULL && EXPECT_SUCCESSFUL_INSERT);
+    assert((pair = hashmap_get(map, key)) != NULL && EXPECT_SUCCESSFUL_GET);
 
-    assert(CHECK_STR(pair->key, key) && "Keys should match");
     CHECK_PAIR(pair, key, expected)
 }
 
@@ -68,23 +77,19 @@ void test_clear(HashMap* map) {
     // Arrange
     const char *_a = "a", *_b = "b", *_c = "c";
     const void* value = (void*)0x1000;
-    HashPair* pair = NULL;
 
     // Act
-    hashmap_resize(map, 3);
-    hashmap_update(map, _a, value);
-    hashmap_update(map, _b, value);
-    hashmap_update(map, _c, value);
+    assert(hashmap_resize(map, 3) && EXPECT_SUCCESSFUL_RESIZE);
+    assert(hashmap_update(map, _a, value) != NULL && EXPECT_SUCCESSFUL_INSERT);
+    assert(hashmap_update(map, _b, value) != NULL && EXPECT_SUCCESSFUL_INSERT);
+    assert(hashmap_update(map, _c, value) != NULL && EXPECT_SUCCESSFUL_INSERT);
 
     hashmap_clear(map);
 
     // Assert
-    pair = hashmap_get(map, _a);
-    assert(pair == NULL && "Pair should be null");
-    pair = hashmap_get(map, _b);
-    assert(pair == NULL && "Pair should be null");
-    pair = hashmap_get(map, _c);
-    assert(pair == NULL && "Pair should be null");
+    assert(hashmap_get(map, _a) == NULL && EXPECT_FAILED_GET);
+    assert(hashmap_get(map, _b) == NULL && EXPECT_FAILED_GET);
+    assert(hashmap_get(map, _c) == NULL && EXPECT_FAILED_GET);
 }
 
 void test_alphabet(HashMap* map) {
@@ -93,42 +98,47 @@ void test_alphabet(HashMap* map) {
     const size_t alphabetSize = sizeof(alphabet);
     char keys[alphabetSize - 1][alphabetSize];
     // Act
-    hashmap_resize(map, alphabetSize * 2);
+    assert(hashmap_resize(map, alphabetSize * 2) && EXPECT_SUCCESSFUL_RESIZE);
     for (int i = 0; i < alphabetSize - 1; i++) {
         for (int j = 0; j <= i; j++)
             keys[i][j] = alphabet[j];
         memset(keys[i] + i + 1, '\0', alphabetSize - i);
-        hashmap_update(map, keys[i], (void*)i);
+        assert(hashmap_update(map, keys[i], (void*)i) != NULL && EXPECT_SUCCESSFUL_INSERT);
     }
     // Assert
     for (int i = 0; i < alphabetSize - 1; i++) {
-        const HashPair* pair = hashmap_get(map, keys[i]);
-        assert(pair != NULL && "Pair should not be null here");
+        const HashPair* pair = NULL;
+        assert((pair = hashmap_get(map, keys[i])) != NULL && EXPECT_SUCCESSFUL_GET);
         CHECK_PAIR(pair, keys[i], (void*)i)
     }
 }
 
 void test_resize_shrink(HashMap* map) {
-    const hash_size_t initValue = 7, shrinkValue = 5;
+    const hash_size_t initValue = 7, shrinkValue = 5, smallestPrimeValue = 2;
     const char keys[] = "ABCDEFG";
-    assert(sizeof(keys) - 1 == initValue && "Keys array must match size of initValue");
+    assert(sizeof(keys) - 1 == initValue && "Number of elements in the keys array must match initValue");
 
     assert(map->size == 0 && "Initial size should be zero");
-    hashmap_resize(map, initValue);
-    assert(map->capacity == initValue && "Capacity should match initValue");
+    assert(hashmap_resize(map, initValue) && EXPECT_SUCCESSFUL_RESIZE);
+    assert(map->capacity == initValue && EXPECT_CAPACITY_TO_MATCH_VALUE);
 
     for (hash_size_t i = 0; i < map->capacity; i++)
-        hashmap_update(map, keys + i, (void*)i);
+        assert(hashmap_update(map, keys + i, (void*)i) != NULL && EXPECT_SUCCESSFUL_INSERT);
     
     assert(map->size == map->capacity && "Used size should match the capacity");
 
-    hashmap_resize(map, shrinkValue);
-    assert(map->capacity == shrinkValue && "Capacity should match shrinkValue");
+    assert(hashmap_resize(map, shrinkValue) && EXPECT_SUCCESSFUL_RESIZE);
+    assert(map->capacity == shrinkValue && EXPECT_CAPACITY_TO_MATCH_VALUE);
     assert(map->size == map->capacity && "Size should match capacity");
 
-    hashmap_resize(map, initValue);
-    assert(map->capacity == initValue && "Capacity should match initValue");
+    assert(hashmap_resize(map, initValue) && EXPECT_SUCCESSFUL_RESIZE);
+    assert(map->capacity == initValue && EXPECT_CAPACITY_TO_MATCH_VALUE);
     assert(map->size == shrinkValue && "Size should remain unchanged after increased capacity");
+
+    map->shrinking = false;
+    assert(!hashmap_resize(map, smallestPrimeValue) && "Should not be able to shrink when shrinking is disabled");
+    assert(map->capacity == initValue && EXPECT_CAPACITY_TO_MATCH_VALUE);
+    assert(map->size == shrinkValue && "Size should be unchanged");
 }
 
 int main() {
@@ -136,7 +146,9 @@ int main() {
 
     // Init
     HashMap map;
-    hashmap_init(&map, TEST_HASHMAP_DEFAULT_CAPACITY, IS_DYNAMIC);
+    hashmap_init(&map, TEST_HASHMAP_DEFAULT_CAPACITY, IS_DYNAMIC, IS_SHRINKING);
+    assert(map.size == 0 && "Size should be zero");
+    assert(map.capacity == TEST_HASHMAP_DEFAULT_CAPACITY && EXPECT_CAPACITY_TO_MATCH_VALUE);
 
     // Run tests
     {

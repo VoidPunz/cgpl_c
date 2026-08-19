@@ -52,7 +52,7 @@ static hash_size_t enhanced_double_hash(HashPair** pairs, hash_size_t capacity, 
     size_t c = 1;
     HashPair* pair;
     while (true) {
-        // Shouldnt really needs this
+        // Shouldnt really need this
         //if (c > capacity * MAX_HASH_ITERATION_COEFFECIENT) cgpl_error_fatal("Hash for key \"%s\" has exceeded maximum attempts | c > (capacity * %d == %d) | capacity = %d\n", key, MAX_HASH_ITERATION_COEFFECIENT, capacity * MAX_HASH_ITERATION_COEFFECIENT, capacity);
         index = (h1 + c * step) % capacity;
         pair = pairs[index];
@@ -73,23 +73,21 @@ static inline HashPair* hashpair_new(const char* key, void* value) {
     return pair;
 }
 
-void hashmap_init(HashMap* map, hash_size_t capacity, bool dynamic) {
+void hashmap_init(HashMap* map, hash_size_t capacity, bool dynamic, bool shrinking) {
     if (map == NULL) return;
     capacity = prime(capacity);
     map->pairs = (HashPair**)calloc(capacity, sizeof(HashPair*));
     if (map->pairs == NULL) ERROR_BAD_ALLOC;
-    for (hash_size_t i = 0; i < capacity; i++) {
-        map->pairs[i] = hashpair_new(NULL, NULL);
-    }
     map->capacity = capacity;
     map->dynamic = dynamic;
+    map->shrinking = shrinking;
     map->size = 0;
 }
 
-void hashmap_resize(HashMap* map, hash_size_t capacity) {
-    if (map == NULL || map->pairs == NULL) return;
+bool hashmap_resize(HashMap* map, hash_size_t capacity) {
+    if (map == NULL || map->pairs == NULL) return false;
     capacity = prime(capacity);
-    if (capacity == map->capacity) return;
+    if (capacity == map->capacity || (!map->shrinking && capacity < map->capacity)) return false;
     HashPair** tempPairs = (HashPair**)calloc(capacity, sizeof(HashPair*));
     if (tempPairs == NULL) ERROR_BAD_ALLOC;
 
@@ -119,6 +117,7 @@ void hashmap_resize(HashMap* map, hash_size_t capacity) {
     map->capacity = capacity;
     if (map->size > size) cgpl_warning("HASHMAP[%p]: Data has been lost after resize\n", map);
     map->size = size;
+    return true;
 }
 
 const HashPair* hashmap_update(HashMap* map, const char* key, void* value) {
