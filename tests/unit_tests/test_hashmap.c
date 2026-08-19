@@ -7,19 +7,19 @@
 
 #undef TEST_CONFIG
 #define TEST_CONFIG(map) \
-    map->isResizable = IS_RESIZABLE; \
-    if (SHOULD_RESIZE) hashmap_resize(map, TEST_HASHMAP_DEFAULT_CAPACITY); \
+    map->dynamic = IS_DYNAMIC; \
     if (SHOULD_CLEAR) hashmap_clear(map); \
+    if (SHOULD_RESIZE) hashmap_resize(map, TEST_HASHMAP_DEFAULT_CAPACITY); \
 
 #undef TEST_RESET
 #define TEST_RESET(map) \
     SHOULD_RESIZE = true; \
     SHOULD_CLEAR = true; \
-    IS_RESIZABLE = true;
+    IS_DYNAMIC = true;
 
 bool SHOULD_RESIZE = true;
 bool SHOULD_CLEAR = true;
-bool IS_RESIZABLE = true;
+bool IS_DYNAMIC = true;
 
 #define CHECK_PAIR(pair, expectedKey, expectedValue) \
     assert(CHECK_STR(pair->key, expectedKey) && "Keys should match"); \
@@ -96,11 +96,10 @@ void test_alphabet(HashMap* map) {
     hashmap_resize(map, alphabetSize * 2);
     for (int i = 0; i < alphabetSize - 1; i++) {
         for (int j = 0; j <= i; j++)
-            keys[i][j] = *(alphabet + j);
+            keys[i][j] = alphabet[j];
         memset(keys[i] + i + 1, '\0', alphabetSize - i);
         hashmap_update(map, keys[i], (void*)i);
     }
-    hashmap_print(map);
     // Assert
     for (int i = 0; i < alphabetSize - 1; i++) {
         const HashPair* pair = hashmap_get(map, keys[i]);
@@ -109,12 +108,35 @@ void test_alphabet(HashMap* map) {
     }
 }
 
+void test_resize_shrink(HashMap* map) {
+    const hash_size_t initValue = 7, shrinkValue = 5;
+    const char keys[] = "ABCDEFG";
+    assert(sizeof(keys) - 1 == initValue && "Keys array must match size of initValue");
+
+    assert(map->size == 0 && "Initial size should be zero");
+    hashmap_resize(map, initValue);
+    assert(map->capacity == initValue && "Capacity should match initValue");
+
+    for (hash_size_t i = 0; i < map->capacity; i++)
+        hashmap_update(map, keys + i, (void*)i);
+    
+    assert(map->size == map->capacity && "Used size should match the capacity");
+
+    hashmap_resize(map, shrinkValue);
+    assert(map->capacity == shrinkValue && "Capacity should match shrinkValue");
+    assert(map->size == map->capacity && "Size should match capacity");
+
+    hashmap_resize(map, initValue);
+    assert(map->capacity == initValue && "Capacity should match initValue");
+    assert(map->size == shrinkValue && "Size should remain unchanged after increased capacity");
+}
+
 int main() {
     FORCE_NEVER_SAVE_IN_BUFFER()
 
     // Init
     HashMap map;
-    hashmap_init(&map, TEST_HASHMAP_DEFAULT_CAPACITY, IS_RESIZABLE);
+    hashmap_init(&map, TEST_HASHMAP_DEFAULT_CAPACITY, IS_DYNAMIC);
 
     // Run tests
     {
@@ -124,12 +146,16 @@ int main() {
     RUN_TEST(test_update, &map)
     {
         SHOULD_RESIZE = false;
-        IS_RESIZABLE = false;
+        IS_DYNAMIC = false;
         RUN_TEST(test_clear, &map)
     }
     {
         SHOULD_RESIZE = false;
         RUN_TEST(test_alphabet, &map)
+    }
+    {
+        IS_DYNAMIC = false;
+        RUN_TEST(test_resize_shrink, &map)
     }
     return 0;
 }

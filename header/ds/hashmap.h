@@ -26,12 +26,14 @@ typedef struct {
     hash_size_t capacity;
     /* Array of pairs that will resize dynamically when the size becomes greater than the current capacity */
     HashPair** pairs;
-    /* A flag to guarantee the hashmap will not resize. */
-    bool isResizable;
+    /* A flag to guarantee the hashmap will not resize during updates if set to true. You can still manually resize with hashmap_resize. */
+    bool dynamic;
+    /* A flag that guarantees that the hashmap cannot shrink and thus not lose data. */
+    bool shrinking;
 } HashMap;
 
 /* Initialize a hashmap with a given capacity. Note that the provided capacity will remain untouched if it is already a prime number, and will otherwise be rounded up to the next closest prime number. The actual capacity will always be >= to the given capacity. */
-void hashmap_init(HashMap* map, hash_size_t capacity, bool isResizable);
+void hashmap_init(HashMap* map, hash_size_t capacity, bool dynamic);
 /* Resizes the hashmap for a given capacity. O(1) if map->size == 0 or new and old capacity are identical, but otherwise a new dynamic array is allocated, and all existing indices will have to be recalculated. If you know the exact perfect size for the intended purpose, multiplying the capacity by 2 or setting the isResizable falg to false will ensure no resize is ever called. NOTE: If the capacity shrinks, this could invalidate existing pointers as they may be freed. */
 void hashmap_resize(HashMap* map, hash_size_t capacity);
 /* Updates (or inserts) a key in the hashmap. Returns the updated pair, or NULL on failure. */

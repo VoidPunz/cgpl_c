@@ -10,14 +10,14 @@ typedef uint64_t fnv_size_t;
 /* Checks if the given number is a prime number */
 static bool is_prime(hash_size_t n) {
     if (n <= 1) return false;
-    if (n <= 3) return true; // 1 and 2 are the smallest prime numbers
+    if (n <= 3) return true; // 2 and 3 are the smallest prime numbers
     if (n % 2 == 0 || n % 3 == 0) return false; // Even numbers or numbers divisible by 3 cannot be primes
     for (hash_size_t i = 5; i * i <= n; i += 6)
         if (n % i == 0 || n % (i + 2) == 0) return false;
     return true;
 }
 
-// TODO: Cache primes in a finite array for faster lookup, or alternatively use a binary search algorithim on precomputed a array of primes
+// TODO: Dynamically cache primes in a finite array for faster lookup, or alternatively use a binary search algorithim on precomputed a array of primes
 /* Finds the next prime number for a given number (prime or not)*/
 static hash_size_t next_prime(hash_size_t n) {
     if (n < 2) return 2;
@@ -40,17 +40,21 @@ static fnv_size_t hash_fnv1a(const char* key) {
     return hash;
 }
 
+#define MAX_HASH_ITERATION_COEFFECIENT 100
+
 /* Performs an enhanced double hash on a key. Returns an index to the corresponding key. */
 static hash_size_t enhanced_double_hash(HashPair** pairs, hash_size_t capacity, const char* key) {
     const fnv_size_t h0 = hash_fnv1a(key);
     const hash_size_t h1 = (hash_size_t)(h0 & 0xFFFFFFFF); // First 32 bits
-    hash_size_t h2 = (hash_size_t)(h0 >> 32); // Last 32 bits
-    if (h2 == 0) h2 = 1; // h2 must never be 0 or the following loop may be infinite
+    const hash_size_t h2 = (hash_size_t)(h0 >> 32); // Last 32 bits
+    const hash_size_t step = h2 % (capacity - 1) + 1; // Step and capacity must be coprime. Step cannot be 0 and neither a multiple of the capacity
     hash_size_t index;
     size_t c = 1;
     HashPair* pair;
     while (true) {
-        index = (h1 + c * h2) % capacity;
+        // Shouldnt really needs this
+        //if (c > capacity * MAX_HASH_ITERATION_COEFFECIENT) cgpl_error_fatal("Hash for key \"%s\" has exceeded maximum attempts | c > (capacity * %d == %d) | capacity = %d\n", key, MAX_HASH_ITERATION_COEFFECIENT, capacity * MAX_HASH_ITERATION_COEFFECIENT, capacity);
+        index = (h1 + c * step) % capacity;
         pair = pairs[index];
 
         if (pair == NULL) break;
@@ -69,7 +73,7 @@ static inline HashPair* hashpair_new(const char* key, void* value) {
     return pair;
 }
 
-void hashmap_init(HashMap* map, hash_size_t capacity, bool isResizable) {
+void hashmap_init(HashMap* map, hash_size_t capacity, bool dynamic) {
     if (map == NULL) return;
     capacity = prime(capacity);
     map->pairs = (HashPair**)calloc(capacity, sizeof(HashPair*));
@@ -78,62 +82,42 @@ void hashmap_init(HashMap* map, hash_size_t capacity, bool isResizable) {
         map->pairs[i] = hashpair_new(NULL, NULL);
     }
     map->capacity = capacity;
-    map->isResizable = isResizable;
+    map->dynamic = dynamic;
     map->size = 0;
 }
 
-/* Resets pairs while returning the number of reset non-null HashPairs */
-static hash_size_t clear_pairs(HashPair** pairs, hash_size_t size) {
-    hash_size_t c = 0;
-    for (hash_size_t i = 0; i < size; i++) {
-        if (pairs[i] != NULL) c++;
-        pairs[i] = NULL;
-    }
-    return c;
-}
-
 void hashmap_resize(HashMap* map, hash_size_t capacity) {
-    if (map == NULL || !map->isResizable || map->pairs == NULL) return;
+    if (map == NULL || map->pairs == NULL) return;
     capacity = prime(capacity);
     if (capacity == map->capacity) return;
     HashPair** tempPairs = (HashPair**)calloc(capacity, sizeof(HashPair*));
     if (tempPairs == NULL) ERROR_BAD_ALLOC;
-
-    hash_size_t size = 0;
 
     // Rehash all indices of the HashPairs from the old array and copy into the new one
     // Copy as many as we can if we don't have enough space (iff capacity < map->capacity)
     if (map->size > 0) {
         for (hash_size_t i = 0; i < MIN(capacity, map->capacity); i++) {
             HashPair* pair = map->pairs[i];
-            if (pair != NULL) {
-                hash_size_t index = enhanced_double_hash(tempPairs, capacity, pair->key);
-                tempPairs[index] = pair;
-            }
+            if (pair == NULL) continue;
+            hash_size_t index = enhanced_double_hash(tempPairs, capacity, pair->key);
+            tempPairs[index] = pair;
         }
 
         // Free any allocated HashPairs in the old array that would otherwise be discarded.
         if (capacity < map->capacity)
             for (hash_size_t i = capacity; i < map->capacity; i++) {
-                if (map->pairs[i] != NULL) {
-                    free(map->pairs[i]);
-                    // Use as a temporary counter for how many HashPairs we have removed
-                    size++;
-                }
+                if (map->pairs[i] == NULL) continue;
+                free(map->pairs[i]);
             }
     }
 
-    // Make sure we can't ever underflow
-    if (MIN(map->size, capacity) < size) cgpl_error_fatal("HASHMAP[%p]: Resizing underflow imminent\n", map);
-
-    // Calculate new size, subtracting any previously removed HashPairs
-    size = MIN(map->size, capacity) - size;
+    hash_size_t size = MIN(map->size, capacity);
     DEBUG_PRINT("HASHMAP[%p] RESIZE (s=%d, c=%d->%d) %s\n", map, size, map->capacity, capacity, capacity > map->capacity ? "INCREASED" : "DECREASED");
     
     free(map->pairs);
     map->pairs = tempPairs;
     map->capacity = capacity;
-    if (map->size != size) cgpl_warning("HASHMAP[%p]: Data has been lost after resize\n", map);
+    if (map->size > size) cgpl_warning("HASHMAP[%p]: Data has been lost after resize\n", map);
     map->size = size;
 }
 
@@ -142,13 +126,13 @@ const HashPair* hashmap_update(HashMap* map, const char* key, void* value) {
         cgpl_warning("Attempted to insert into a NULL map.");
         return NULL;
     }
-    if (map->isResizable && map->size + 1 > map->capacity / 2) hashmap_resize(map, map->capacity * 2);
+    if (map->dynamic && map->size + 1 > map->capacity / 2) hashmap_resize(map, map->capacity * 2);
 
     hash_size_t index = enhanced_double_hash(map->pairs, map->capacity, key);
 
     // Insert
     if (map->pairs[index] == NULL) {
-        if (!map->isResizable && map->size + 1 > map->capacity) {
+        if (!map->dynamic && map->size + 1 > map->capacity) {
             cgpl_warning("HASHPAIR[%p]: Resize inhibited, new key \"%s\" rejected.\n", map, key);
             return NULL;
         }
@@ -181,8 +165,8 @@ void hashmap_clear(HashMap* map) {
         if (*pairPtr != NULL) free(*pairPtr);
         *pairPtr = NULL;
     }
+    DEBUG_PRINT("HASHMAP[%p] cleared (%d->0)!\n", map, map->size);
     map->size = 0;
-    DEBUG_PRINT("HASHMAP[%p] cleared (%d->0)!\n", map, map->capacity);
 }
 
 const HashPair* hashmap_get(HashMap* map, const char* key) {
