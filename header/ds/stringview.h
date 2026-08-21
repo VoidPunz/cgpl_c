@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <string.h>
 
-/* Compile time initialization of a new string view. */
-#define SV_CT(str) ((StringView){.cstr = str, .size = sizeof(str) - 1})
+/* Compile time initialization for a StringView object */
+#define STRINGVIEW(_cstr) ((StringView){.cstr = _cstr, .size = sizeof(_cstr) - 1})
 
 typedef unsigned int chop_t;
 

@@ -5,6 +5,10 @@
 #include "../header/parser.h"
 #include "../header/cgplstate.h"
 
+#define ERROR_STACK_SIZE 400
+
+Stack g_ErrorStack;
+
 int main(int argc, char* argv[]) {
     /* Check source */
     if (argc < 2) {
@@ -13,6 +17,9 @@ int main(int argc, char* argv[]) {
     }
 
     char* source = argv[1];
+
+    /* Initialize error stack */
+    stack_init(&g_ErrorStack, ERROR_STACK_SIZE);
 
     /* Begin tokenization */
     #ifdef DEBUG

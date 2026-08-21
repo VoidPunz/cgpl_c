@@ -49,12 +49,12 @@ int main() {
     FORCE_NEVER_SAVE_IN_BUFFER()
 
     // Init
-    ListNode* headNode = list_new(NULL);
+    ListNode headNode = LISTNODE(NULL);
 
     // Run tests
-    RUN_TEST(test_count, headNode)
-    RUN_TEST(test_append, headNode)
-    RUN_TEST(test_connect, headNode)
+    RUN_TEST(test_count, &headNode)
+    RUN_TEST(test_append, &headNode)
+    RUN_TEST(test_connect, &headNode)
     
     return 0;
 }

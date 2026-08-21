@@ -1,9 +1,9 @@
 #include "../header/lexer.h"
 
 const KeywordTuple g_Keywords[] = {
-    {.type = TOKEN_KEYWORD_VAR, .keyword = SV_CT("var")},
-    {.type = TOKEN_KEYWORD_BOOL, .keyword = SV_CT("true")},
-    {.type = TOKEN_KEYWORD_BOOL, .keyword = SV_CT("false")},
+    {.type = TOKEN_KEYWORD_VAR, .keyword = STRINGVIEW("var")},
+    {.type = TOKEN_KEYWORD_BOOL, .keyword = STRINGVIEW("true")},
+    {.type = TOKEN_KEYWORD_BOOL, .keyword = STRINGVIEW("false")},
 };
 
 /* Peeks the next character on a given file buffer. Returns EOF if nothing was found. */

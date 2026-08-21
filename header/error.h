@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "ds/stack.h"
 #include "ansii.h"
 
 #define ERROR_BAD_ALLOC cgpl_error_fatal("Bad allocation")
@@ -12,6 +13,9 @@
 #define WARNING_UNEXPECTED_NULL_PTR cgpl_warning("Bad ptr")
 
 // TODO: Need support for runtime diagnostic error handling (interpreter errors w/o crashing), need a stack datastructure...
+typedef struct {
+
+} CGPLError;
 
 // TODO: Refactor into a macro so __FILE__ and __LINE__ macros have the correct intended values
 /* Output an error message before terminating the program */
@@ -35,5 +39,8 @@ static inline void cgpl_warning(const char* format, ...) {
     va_end(args);
     printf(TERMINAL_COLOR_DEFAULT "\n");
 }
+
+/* CGPL interpreter error stack. Must be defined and initialized somewhere externally. */
+extern Stack g_ErrorStack;
 
 #endif /* CGPL_ERROR_H_ */

@@ -6,6 +6,8 @@
 #include "../error.h"
 #include "../debug.h"
 
+/* Compile time initialization for a ListNode object */
+#define LISTNODE(_data) ((ListNode){.data = _data, .next = NULL})
 #define CGPL_PRINT_BUFFER_SIZE 100
 
 typedef struct ListNode {

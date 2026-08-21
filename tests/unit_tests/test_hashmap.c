@@ -36,6 +36,43 @@ bool IS_SHRINKING = true;
     assert(CHECK_STR(pair->key, expectedKey) && "Keys should match"); \
     assert(pair->value == expectedValue && "Values should match");
 
+void test_resize(HashMap* map);
+void test_update(HashMap* map);
+void test_clear(HashMap* map);
+void test_alphabet(HashMap* map);
+void test_resize_shrink(HashMap* map);
+
+int main() {
+    FORCE_NEVER_SAVE_IN_BUFFER()
+
+    // Init
+    HashMap map;
+    hashmap_init(&map, TEST_HASHMAP_DEFAULT_CAPACITY, IS_DYNAMIC, IS_SHRINKING);
+    assert(map.size == 0 && "Size should be zero");
+    assert(map.capacity == TEST_HASHMAP_DEFAULT_CAPACITY && EXPECT_CAPACITY_TO_MATCH_VALUE);
+
+    // Run tests
+    {
+        SHOULD_RESIZE = false;
+        RUN_TEST(test_resize, &map)
+    }
+    RUN_TEST(test_update, &map)
+    {
+        SHOULD_RESIZE = false;
+        IS_DYNAMIC = false;
+        RUN_TEST(test_clear, &map)
+    }
+    {
+        SHOULD_RESIZE = false;
+        RUN_TEST(test_alphabet, &map)
+    }
+    {
+        IS_DYNAMIC = false;
+        RUN_TEST(test_resize_shrink, &map)
+    }
+    return 0;
+}
+
 void test_resize(HashMap* map) {
     const hash_size_t value = 16, expected = 17;
     hashmap_resize(map, value);
@@ -139,35 +176,4 @@ void test_resize_shrink(HashMap* map) {
     assert(!hashmap_resize(map, smallestPrimeValue) && "Should not be able to shrink when shrinking is disabled");
     assert(map->capacity == initValue && EXPECT_CAPACITY_TO_MATCH_VALUE);
     assert(map->size == shrinkValue && "Size should be unchanged");
-}
-
-int main() {
-    FORCE_NEVER_SAVE_IN_BUFFER()
-
-    // Init
-    HashMap map;
-    hashmap_init(&map, TEST_HASHMAP_DEFAULT_CAPACITY, IS_DYNAMIC, IS_SHRINKING);
-    assert(map.size == 0 && "Size should be zero");
-    assert(map.capacity == TEST_HASHMAP_DEFAULT_CAPACITY && EXPECT_CAPACITY_TO_MATCH_VALUE);
-
-    // Run tests
-    {
-        SHOULD_RESIZE = false;
-        RUN_TEST(test_resize, &map)
-    }
-    RUN_TEST(test_update, &map)
-    {
-        SHOULD_RESIZE = false;
-        IS_DYNAMIC = false;
-        RUN_TEST(test_clear, &map)
-    }
-    {
-        SHOULD_RESIZE = false;
-        RUN_TEST(test_alphabet, &map)
-    }
-    {
-        IS_DYNAMIC = false;
-        RUN_TEST(test_resize_shrink, &map)
-    }
-    return 0;
 }
