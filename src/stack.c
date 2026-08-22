@@ -4,7 +4,11 @@ void stack_init(Stack* stack, stack_size_t size) {
     if (stack == NULL) return;
     stack->top = -1;
     stack->size = size;
-    stack->buffer = size == 0 ? NULL : (void**)malloc(sizeof(void*) * size);
+    if (size != 0) {
+        stack->buffer = (void**)malloc(sizeof(void*) * size);
+        if (stack->buffer == NULL) ERROR_BAD_ALLOC;
+    } else
+        stack->buffer = NULL;
 }
 
 stack_top_t stack_push(Stack* stack, void* data) {

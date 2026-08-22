@@ -2,11 +2,12 @@
 #define CGPL_STACK_H_
 
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "../utils.h"
 #include "../debug.h"
+#include "../types.h"
 
 /* Compile time initialization for a Stack object. Buffer will be uninitialized, properly initialize by calling stack_init */
 #define STACK(_size) ((Stack){.top = -1, .size = _size, .buffer = NULL})
@@ -39,11 +40,15 @@ static inline void stack_clear(Stack* stack) {
 }
 /* Checks if the stack is full */
 static inline bool stack_is_full(Stack* stack) {
-    return stack->top == (stack_top_t)stack->size - 1;
+    return stack->buffer == NULL || stack->top == (stack_top_t)stack->size - 1;
 }
 /* Checks if the stack is empty */
 static inline bool stack_is_empty(Stack* stack) {
     return stack->buffer == NULL || stack->top == -1;
+}
+/* Returns the number of elements in the stack. Returns 0 if the stack is NULL */
+static inline stack_size_t stack_count(Stack* stack) {
+    return stack == NULL ? 0 : stack->top - 1;
 }
 
 #endif /* CGPL_STACK_H_ */

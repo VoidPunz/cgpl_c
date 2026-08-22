@@ -7,7 +7,7 @@
 #define SYNTAX_ERROR(msg) cgpl_error_fatal("Syntax error: %s", msg)
 
 #ifdef DEBUG
-    #define DEBUG_PARSER(id, rest) DEBUG_PRINT("%s: [rest: %s - %d]\n", id, cgpl_token_tostring[get_token(*rest)->type], list_count(*rest))
+    #define DEBUG_PARSER(id, rest) DEBUG_PRINT("%s: [rest: %s - %lld]\n", id, cgpl_token_tostring[get_token(*rest)->type], list_count(*rest))
 #else
     #define DEBUG_PARSER(id, rest)
 #endif

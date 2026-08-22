@@ -2,9 +2,9 @@
 #include "../../header/ds/stack.h"
 
 #undef TEST_CONFIG
-#define TEST_CONFIG(stack, size) \
+#define TEST_CONFIG(stack, _size) \
     if (stack->buffer != NULL) free(stack->buffer); \
-    stack_init(stack, size);
+    stack_init(stack, _size); \
 
 #define EXPECTED_SUCCESSFUL_PUSH "Expected successful push"
 #define EXPECTED_SUCCESSFUL_POP "Expected successful pop"
@@ -87,7 +87,6 @@ void test_peek(Stack* stack) {
     const void* expected = TO_VOIDPTR(TEST_VALUE_DEFAULT);
     TRY_PUSH(stack, expected);
     CHECK_IS_NOT_EMPTY(stack);
-    
 }
 
 void test_clear(Stack* stack) {

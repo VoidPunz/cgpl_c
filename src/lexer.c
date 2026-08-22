@@ -127,7 +127,7 @@ static void insert_node(LexerState* ls, char ch) {
 
     // Lexically analyse the character, if none succeed throw a bad token error
     if ((type = is_whitespace(ch)) == TOKEN_NA && (type = is_operation(ch)) == TOKEN_NA && (type = is_word(ls, ch)) == TOKEN_NA && (type = is_digit(ch)) == TOKEN_NA) {
-        cgpl_error_fatal("Bad token: (line: %d, col: %d) \"%c\"", ls->line, ls->col, ch);
+        cgpl_error_fatal("Bad token: (line: %lld, col: %lld) \"%c\"", ls->line, ls->col, ch);
     }
 
     if (ls->lexemeSize + 1 >= CGPL_LEXEME_MAX_SIZE) cgpl_error_fatal("Lexeme grew too large (Max %d characters)", CGPL_LEXEME_MAX_SIZE);
