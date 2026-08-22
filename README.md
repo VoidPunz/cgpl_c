@@ -1,7 +1,7 @@
 # Introduction
 CGPL_C is a personal solo implementation project separate from the original fourth semester [Aalborg University (AAU)](https://www.en.aau.dk) bachelor project to design and implement a compiler/interpreter. It was originally implemented in Java with a generated parse tree using ANTLR. This solution implements manual lexing and parsing. I am rewriting this in C because I think it's a fun learning experience to learn about both interpreters and to gain experience in C.
 
-CGPL stands for _Card Game Prototyping Language_ and is a niche attempt at creating an interpreter specifically designed for rapid card game prototyping, although a very significant critiscism of the language at examination is that the entire initial language may as well have been implemented as a library in any existing arbitrary OOP-supporting language as opposed to as a standalone language.
+CGPL stands for _Card Game Prototyping Language_ and is a niche attempt at implementing an interpreter specifically designed for rapid card game prototyping, although a very significant critiscism of the language at examination is that the entire initial language may as well have been implemented as a library in any existing arbitrary OOP-supporting language as opposed to as a standalone language.
 
 The project is currently very WIP and unfinished.
 
@@ -9,7 +9,9 @@ The project is currently very WIP and unfinished.
 WIP...
 
 ## Features
-WIP...
+- LR(k=?) Parsing (WIP)
+- Simple test runner
+- ...
 
 ## Syntax
 WIP...
