@@ -6,7 +6,7 @@
 #include "ds/stack.h"
 #include "ansii.h"
 #include "utils.h"
-#include "types.h"
+#include "cgpl_types.h"
 
 typedef struct {
     /* Token the error occured at */

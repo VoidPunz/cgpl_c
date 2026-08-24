@@ -26,7 +26,7 @@ static bool consume(ListNode** rest) {
 }
 
 /* Peek n number of tokens ahead (ignores whitespace) */
-static token_t peek(ListNode* node, size_t n) {
+static token_t peek(ListNode* node, u64 n) {
     while (n-- != 0 && node != NULL) {
         consume(&node);
         node = node->next;
@@ -111,13 +111,13 @@ Ast_Node* cgpl_ast_new(const Token* token, ast_kind_t kind) {
 }
 
 #ifdef DEBUG
-    static inline void cgpl_ast_print_internal(Ast_Node* ast, size_t c) {
-        for (size_t i = 0; i < c; i++) putchar('\t');
+    static inline void cgpl_ast_print_internal(Ast_Node* ast, u64 c) {
+        for (u64 i = 0; i < c; i++) putchar('\t');
         DEBUG_PRINT("%s: %s\n", ast_kind_tostring[ast->kind], cgpl_token_tostring[ast->token->type]);
     }
 
     void cgpl_ast_print(Ast_Node* ast) {
-        static size_t c = 0;
+        static u64 c = 0;
         ListNode* node = ast->treeNode;
         printf("\n");
         cgpl_ast_print_internal(ast, c);

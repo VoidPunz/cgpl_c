@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ds/list.h"
-#include "types.h"
+#include "cgpl_types.h"
 #include "debug.h"
 
 #define CGPL_LEXEME_MAX_SIZE 64

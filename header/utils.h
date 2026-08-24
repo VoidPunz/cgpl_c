@@ -4,15 +4,6 @@
 #include <stdio.h>
 #include "ansii.h"
 
-typedef int8_t i8;
-typedef int16_t i16;
-typedef int32_t i32;
-typedef int64_t i64;
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
 #define WRAP_ERROR_COL(msg) (TERMINAL_COLOR_RED msg TERMINAL_COLOR_DEFAULT)
 #define WRAP_WARNING_COL(msg) (TERMINAL_COLOR_GREY msg TERMINAL_COLOR_DEFAULT)
 #define WARP_HIGHLIGHT_COL(msg) (TERMINAL_COLOR_GREY msg TERMINAL_COLOR_DEFAULT)

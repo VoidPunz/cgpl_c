@@ -12,8 +12,8 @@
 /* Compile time initialization for a Stack object. Buffer will be uninitialized, properly initialize by calling stack_init */
 #define STACK(_size) ((Stack){.top = -1, .size = _size, .buffer = NULL})
 
-typedef uint32_t stack_size_t;
-typedef int64_t stack_top_t;
+typedef u32 stack_size_t;
+typedef i64 stack_top_t;
 
 /*  A dynamically allocated generic stack */
 typedef struct {

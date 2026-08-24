@@ -1,6 +1,6 @@
 #include "../header/ds/hashmap.h"
 
-typedef uint64_t fnv_size_t;
+typedef u64 fnv_size_t;
 
 /* 64-bit fnv1a offset basis*/
 #define FNV_OFFSET_BASIS ((fnv_size_t)0xcbf29ce484222325ULL)

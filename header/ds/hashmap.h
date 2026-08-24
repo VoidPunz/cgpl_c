@@ -9,7 +9,7 @@
 #include "../error.h"
 #include "../debug.h"
 
-typedef uint32_t hash_size_t;
+typedef u32 hash_size_t;
 
 typedef struct HashPair {
     /* Associated key */

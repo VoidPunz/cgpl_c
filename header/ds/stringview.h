@@ -3,18 +3,19 @@
 
 #include <stddef.h>
 #include <string.h>
+#include "../types.h"
 
 /* Compile time initialization for a StringView object */
 #define STRINGVIEW(_cstr) ((StringView){.cstr = _cstr, .size = sizeof(_cstr) - 1})
 
-typedef unsigned int chop_t;
+typedef u32 chop_t;
 
 typedef struct {
     const char* cstr;
-    size_t size;
+    u64 size;
 } StringView;
 
-/* Creates a new string view. Intended do be used with static strings. */
+/* Creates a new string view. Intended do be used with static or otherwise constant strings whose lifetime is guaranteed. */
 StringView sv_new(const char* str);
 /* Chop the string view from the right indices. */
 void sv_chop_right(StringView* sv, chop_t n);

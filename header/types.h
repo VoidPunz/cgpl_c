@@ -3,8 +3,16 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "ds/stringview.h"
 #include "utils.h"
+
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
 
 #define TOKEN_TYPE_LIST(X)  \
     X(TOKEN_NA)             \
@@ -33,21 +41,5 @@ typedef enum {
 static const char* cgpl_token_tostring[] = {
     TOKEN_TYPE_LIST(GENERATE_STRING)
 };
-
-typedef double cgpl_number_t;
-typedef StringView cgpl_string_t;
-typedef bool cgpl_bool_t;
-
-typedef union {
-    cgpl_number_t num;
-    cgpl_string_t word;
-    cgpl_bool_t b;
-} SemanticValue;
-
-typedef struct {
-    SemanticValue sem;
-    token_t type;
-    uint32_t line, col;
-} Token;
 
 #endif /* CGPL_TYPES_H_ */

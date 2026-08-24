@@ -25,8 +25,8 @@ static inline token_t is_ascii(char ch) {
 
 /* Check if a lexeme is part of a keyword. This function assumes the current type of the given character is of TOKEN_ASCII. */
 static token_t is_keyword(LexerState* ls, char ch) {
-    static uint32_t size = 0;
-    for (size_t i = 0; i < CGPL_ARRAY_SIZE(g_Keywords); i++) {
+    static u32 size = 0;
+    for (u64 i = 0; i < CGPL_ARRAY_SIZE(g_Keywords); i++) {
         const KeywordTuple* tuple = &g_Keywords[i];
         if (size > sizeof(tuple->keyword.cstr) - 1) break;
 
@@ -95,7 +95,7 @@ static inline token_t is_operation(char ch) {
     }
 }
 
-static inline ListNode* create_token_node(token_t type, char* lexemeBuffer, size_t size, uint32_t line, uint32_t col) {
+static inline ListNode* create_token_node(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 col) {
     return list_new(cgpl_new_token(type, lexemeBuffer, size, line, col));
 }
 
@@ -163,8 +163,8 @@ static void insert_node(LexerState* ls, char ch) {
 }
 
 static void lexer_finish(LexerState* ls) {
-    const size_t size = 0;
-    const uint32_t line = 0, col = 0;
+    const u64 size = 0;
+    const u32 line = 0, col = 0;
     
     // Create SOF node and replace as head node
     ListNode* node = create_token_node(TOKEN_SOF, NULL, size, line, col);
@@ -202,7 +202,7 @@ static void init_state_base(LexerState* ls) {
     ls->src.type = CGPL_SOURCE_LIMIT;
 }
 
-Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size, uint32_t line, uint32_t col) {
+Token* cgpl_new_token(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 col) {
     Token* token = (Token*)malloc(sizeof(Token));
     if (token == NULL) ERROR_BAD_ALLOC;
     token->type = type;
@@ -232,7 +232,7 @@ void cgpl_lexer_init_state_file(LexerState *ls, FILE* fp) {
     ls->src.fp = fp;
 }
 
-void cgpl_lexer_init_state_string(LexerState* ls, char* ptr, size_t size) {
+void cgpl_lexer_init_state_string(LexerState* ls, char* ptr, u64 size) {
     if (ptr == NULL) ERROR_UNEXPECTED_NULL_PTR;
     init_state_base(ls);
     ls->src.type = CGPL_SOURCE_STRING;
