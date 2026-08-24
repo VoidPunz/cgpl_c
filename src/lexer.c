@@ -177,6 +177,7 @@ static void lexer_finish(LexerState* ls) {
     ls->tail = node;
 }
 
+// TODO: Rewrite as an iterative loop instead of recursion
 /* Perform an iteration at the cursor of the given source. */
 static void cgpl_lexer_next(LexerState* ls) {
     // New scope to pop all used variables off the stack before any recursion
