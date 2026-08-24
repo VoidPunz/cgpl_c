@@ -1,0 +1,6 @@
+#ifndef CGPL_ARENA_VMEM_WINDOWS_H_
+#define CGPL_ARENA_VMEM_WINDOWS_H_
+
+
+
+#endif /* CGPL_ARENA_VMEM_WINDOWS_H_ */

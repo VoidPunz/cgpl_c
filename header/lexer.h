@@ -29,9 +29,9 @@ typedef struct {
                 /* Source */
                 char* ptr;
                 /* Size of source */
-                size_t size;
+                u64 size;
                 /* Current cursor position on the string source. */
-                size_t cursor;
+                u64 cursor;
             } sbuffer;
         };
         enum {
@@ -43,11 +43,11 @@ typedef struct {
     /* Temporary lexeme */
     char lexemeBuffer[CGPL_LEXEME_MAX_SIZE];
     /* Lexeme size */
-    size_t lexemeSize;
+    u64 lexemeSize;
     /* The current line */
-    size_t line;
+    u64 line;
     /* Column of the line */
-    size_t col;
+    u64 col;
     /* Head node of the list of tokens. This will always be an SOF token. */
     ListNode *head;
     /* Tail node of the list of tokens. */
@@ -69,11 +69,11 @@ typedef struct {
 /* Array of all the keywords in CGPL */
 extern const KeywordTuple g_Keywords[];
 /* Allocate a new token with a given type */
-Token* cgpl_new_token(token_t type, char* lexemeBuffer, size_t size, uint32_t line, uint32_t col);
+Token* cgpl_new_token(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 col);
 /* Initialize a lexer state with a file source. */
 void cgpl_lexer_init_state_file(LexerState* ls, FILE* fp);
 /* Initialize a lexer state with a string source. */
-void cgpl_lexer_init_state_string(LexerState* ls, char* sp, size_t ss);
+void cgpl_lexer_init_state_string(LexerState* ls, char* sp, u64 ss);
 /* Tokenizes a source (either a file with .cgpl extension or raw string) and returns a list of tokens. */
 ListNode* cgpl_lexer_tokenize(char* source);
 /* Shorthand for grabbing the token value from a node */
