@@ -100,8 +100,7 @@ void test_clear(Arena* arena) {
 }
 
 void test_capacity(Arena* arena) {
-    arena_clear(arena);
     CHECK_EMPTY_ARENA(arena);
-    void* badPtr = arena_push(arena, ARENA_MAX_SIZE(arena), true);
+    void* badPtr = arena_push(arena, ARENA_REMAINING_SIZE(arena), true);
     CHECK_VALID_PTR(badPtr);
 }
