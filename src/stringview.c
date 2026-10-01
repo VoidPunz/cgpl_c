@@ -8,7 +8,7 @@ StringView sv_new(const char* cstr) {
 }
 
 void sv_chop_right(StringView* sv, chop_t n) {
-    if (sv->size - n < 0) return;
+    if (sv->size - n == 0) return;
     sv->size -= n;
 }
 

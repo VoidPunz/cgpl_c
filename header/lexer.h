@@ -3,12 +3,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "arena/arena_include.h"
 #include "ds/list.h"
 #include "cgpl_types.h"
 #include "debug.h"
 
 #define CGPL_LEXEME_MAX_SIZE 64
-#define CGPL_KEYWORD_BUFFER static const char
 #define IS_TOKEN(n) (n >= TOKEN_SOF && n < TOKEN_LIMIT)
 #define IS_WHITESPACE(n) (n >= TOKEN_WHITESPACE && n <= TOKEN_TAB)
 

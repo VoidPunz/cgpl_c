@@ -4,6 +4,14 @@
 #include <stdio.h>
 #include "ansii.h"
 
+#if defined(_MSC_VER)
+    #define ALWAYS_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+    #define ALWAYS_INLINE static inline __attribute__((always_inline))
+#else
+    #define ALWAYS_INLINE static inline
+#endif
+
 #define WRAP_ERROR_COL(msg) (TERMINAL_COLOR_RED msg TERMINAL_COLOR_DEFAULT)
 #define WRAP_WARNING_COL(msg) (TERMINAL_COLOR_GREY msg TERMINAL_COLOR_DEFAULT)
 #define WARP_HIGHLIGHT_COL(msg) (TERMINAL_COLOR_GREY msg TERMINAL_COLOR_DEFAULT)

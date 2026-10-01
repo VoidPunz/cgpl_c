@@ -1,6 +1,7 @@
 #ifndef CGPL_PARSER_H_
 #define CGPL_PARSER_H_
 
+#include "arena/arena_include.h"
 #include "ds/list.h"
 #include "lexer.h"
 

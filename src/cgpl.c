@@ -12,9 +12,18 @@ Stack g_ErrorStack;
 int main(int argc, char* argv[]) {
     /* Check source */
     if (argc < 2) {
-        printf("Source missing (either a file path or raw source)");
+        puts("Source missing (either a file path or raw source)");
         return EXIT_FAILURE;
     }
+
+    /* Print the used arena type */
+    #if defined(CGPL_USE_WIN32_ARENA)
+    DEBUG_PRINT("[Windows Arena]: Using Windows platform-specific memory arena (virtual memory).\n");
+    #elif defined(CGPL_USE_LINUX_ARENA)
+    DEBUG_PRINT("[Linux Arena]: Using default non-platform-specific heap memory arena.\n");
+    #else /* CGPL_USE_HEAP_ARENA */
+    DEBUG_PRINT("[Default Arena]: Using default non-platform-specific heap memory arena.\n");
+    #endif
 
     char* source = argv[1];
 
@@ -23,19 +32,21 @@ int main(int argc, char* argv[]) {
 
     /* Begin tokenization */
     #ifdef DEBUG
-        printf("Beginning tokenization...\n");
-    #endif
+        puts("Beginning tokenization...");
+    #endif /* DEBUG */
+
     ListNode* tokenHead = cgpl_lexer_tokenize(source);
     Ast_Node* astHead = cgpl_parse(tokenHead);
     list_free(&tokenHead);
+
     #ifdef DEBUG
         cgpl_ast_print(astHead);
-    #endif
+    #endif /* DEBUG */
     CGPLState state;
     cgpl_state_init(&state);
     // TODO: free ast
 
     /* Finish */
-    printf("Finished!\n");
+    puts("Finished!");
     return EXIT_SUCCESS;
 }

@@ -4,9 +4,9 @@ COL_RESET = \033[0m
 COL_PRIMARY = \033[34m # Blue
 
 CC = gcc
-_CFLAGS = -std=c11 -Wall -l m
+_CFLAGS = -std=c11 -Wall -Wextra -l m
 OPT = -O2
-CFLAGS = $(_CFLAGS) $(OPT)
+CFLAGS = $(_CFLAGS) $(OPT) $(ARENAFLAGS)
 TARGET = cgpl.exe
 
 SRC_DIR = src
@@ -20,8 +20,16 @@ OBJ = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 release: $(TARGET)
 
-debug: CFLAGS = $(_CFLAGS) -g -O0 -DDEBUG
+debug: CFLAGS = $(_CFLAGS) -g -O0 -DDEBUG $(ARENAFLAGS)
 debug: $(TARGET)
+
+# Force default arena (release)
+fda: ARENAFLAGS = -DFORCE_DEFAULT_ARENA
+fda: $(TARGET)
+
+fda_d: ARENAFLAGS = -DFORCE_DEFAULT_ARENA
+fda_d: CFLAGS = $(_CFLAGS) -g -O0 -DDEBUG $(ARENAFLAGS)
+fda_d: $(TARGET)
 
 $(TARGET): $(OBJ)
 	@printf "$(COL_PRIMARY)"

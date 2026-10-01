@@ -18,7 +18,7 @@ CAT = cat
 
 SRC = $(wildcard test_*.c)
 OBJ = $(SRC:%.c=.o)
-BIN = $(SRC:.c=$(EXE)) # test_*.c -> test_.exe*
+BIN = $(SRC:.c=$(EXE)) # test_*.c -> test_*.exe
 
 .PHONY: all clean $(BIN)
 
