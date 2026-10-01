@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "arena/arena_include.h"
 #include "ds/list.h"
 #include "cgpl_types.h"
@@ -19,27 +20,12 @@
 
 /* Lexer state object. Use either cgpl_lexer_init_state_file or cgpl_lexer_init_state_string to initialize depending on the corresponding source. */
 typedef struct {
-    /* Source info */
-    struct {
-        union {
-            /* File source */
-            FILE* fp;
-            /* String buffer source */
-            struct {
-                /* Source */
-                char* ptr;
-                /* Size of source */
-                u64 size;
-                /* Current cursor position on the string source. */
-                u64 cursor;
-            } sbuffer;
-        };
-        enum {
-            CGPL_SOURCE_FILE = 0,
-            CGPL_SOURCE_STRING,
-            CGPL_SOURCE_LIMIT
-        } type;
-    } src;
+    /* Source buffer pointer */
+    char* sourceBuffer;
+    /* Size of source */
+    u64 sourceSize;
+    /* Current cursor position on the string source. */
+    u64 sourceCursor;
     /* Temporary lexeme */
     char lexemeBuffer[CGPL_LEXEME_MAX_SIZE];
     /* Lexeme size */
@@ -70,8 +56,8 @@ typedef struct {
 extern const KeywordTuple g_Keywords[];
 /* Allocate a new token with a given type */
 Token* cgpl_new_token(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 col);
-/* Initialize a lexer state with a file source. */
-void cgpl_lexer_init_state_file(LexerState* ls, FILE* fp);
+/* Initialize a lexer state with a file source. Returns the size of the read file if successful. */
+u64 cgpl_lexer_init_state_file(LexerState* ls, char* fs);
 /* Initialize a lexer state with a string source. */
 void cgpl_lexer_init_state_string(LexerState* ls, char* sp, u64 ss);
 /* Tokenizes a source (either a file with .cgpl extension or raw string) and returns a list of tokens. */
