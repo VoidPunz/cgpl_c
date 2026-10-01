@@ -6,20 +6,13 @@ const KeywordTuple g_Keywords[] = {
     {.type = TOKEN_KEYWORD_BOOL, .keyword = STRINGVIEW("false")},
 };
 
-/* Peeks the next character on a given file buffer. Returns EOF if nothing was found. */
-static int file_peek(FILE* fp) {
-    int ch = fgetc(fp);
-    if (ch != EOF) ungetc(ch, fp);
-    return ch;
-}
-
 /* Checks if a lexeme is a digit (0-9)* */
-static inline token_t is_digit(char ch) {
+ALWAYS_INLINE token_t is_digit(char ch) {
     return (ch >= '0' && ch <= '9') ? TOKEN_NUMERIC : TOKEN_NA;
 }
 
 /* Checks if a lexeme is an ASCII string ([A-Z][a-z])* */
-static inline token_t is_ascii(char ch) {
+ALWAYS_INLINE token_t is_ascii(char ch) {
     return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) ? TOKEN_ASCII : TOKEN_NA;
 }
 
@@ -52,7 +45,7 @@ static token_t is_keyword(LexerState* ls, char ch) {
 }
 
 /* Checks if a lexeme is a word ([A-Z][a-z])*([0-9])* */
-static inline token_t is_word(LexerState* ls, char ch) {
+ALWAYS_INLINE token_t is_word(LexerState* ls, char ch) {
     // Control that if we see a digit, it's preceeded by an ascii or word token
     if (is_digit(ch) == TOKEN_NUMERIC && ls->prevType == TOKEN_WORD) {
         return TOKEN_WORD;
@@ -62,7 +55,7 @@ static inline token_t is_word(LexerState* ls, char ch) {
 }
 
 /* Checks if a character is whitespace ' ' */
-static inline token_t is_whitespace(char ch) {
+ALWAYS_INLINE token_t is_whitespace(char ch) {
     switch (ch) {
         case ' ':
             return TOKEN_WHITESPACE;
@@ -76,7 +69,7 @@ static inline token_t is_whitespace(char ch) {
 }
 
 /* Checks if a lexeme is an operation. */
-static inline token_t is_operation(char ch) {
+ALWAYS_INLINE token_t is_operation(char ch) {
     switch (ch) {
         case '=':
             return TOKEN_EQUALS;
@@ -95,29 +88,20 @@ static inline token_t is_operation(char ch) {
     }
 }
 
-static inline ListNode* create_token_node(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 col) {
+ALWAYS_INLINE ListNode* create_token_node(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 col) {
     return list_new(cgpl_new_token(type, lexemeBuffer, size, line, col));
 }
 
 static char get_char(LexerState* ls) {
     char ch = '\0';
-    if (ls->src.type == CGPL_SOURCE_FILE) {
-        ch = fgetc(ls->src.fp);
-    } else if (ls->src.type == CGPL_SOURCE_STRING) {
-        if (ls->src.sbuffer.cursor >= ls->src.sbuffer.size) return EOF;
-        ch = ls->src.sbuffer.ptr[ls->src.sbuffer.cursor];
-        ls->src.sbuffer.cursor++;
-    }
+    if (ls->sourceCursor >= ls->sourceSize) return EOF;
+    ch = ls->sourceBuffer[ls->sourceCursor];
+    ls->sourceCursor++;
     return ch;
 }
 
-static int is_end(LexerState* ls) {
-    if (ls->src.type == CGPL_SOURCE_FILE) {
-        return file_peek(ls->src.fp) == EOF;
-    } else if (ls->src.type == CGPL_SOURCE_STRING) {
-        return ls->src.sbuffer.cursor == ls->src.sbuffer.size;
-    }
-    cgpl_error_fatal("Bad source type");
+ALWAYS_INLINE int is_end(LexerState* ls) {
+    return ls->sourceCursor >= ls->sourceSize;
 }
 
 static void insert_node(LexerState* ls, char ch) {
@@ -199,7 +183,6 @@ static void init_state_base(LexerState* ls) {
     ls->head = ls->tail = NULL;
     ls->prevType = TOKEN_NA;
     ls->prevCh = '\0';
-    ls->src.type = CGPL_SOURCE_LIMIT;
 }
 
 Token* cgpl_new_token(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 col) {
@@ -225,24 +208,43 @@ Token* cgpl_new_token(token_t type, char* lexemeBuffer, u64 size, u32 line, u32 
     return token;
 }
 
-void cgpl_lexer_init_state_file(LexerState *ls, FILE* fp) {
-    if (fp == NULL) ERROR_UNEXPECTED_NULL_PTR;
-    init_state_base(ls);
-    ls->src.type = CGPL_SOURCE_FILE;
-    ls->src.fp = fp;
+/* Reads a file with known size in filesystem into a character buffer in RAM. Returns size of the file and the buffer if successful. */
+static u64 read_file(char* source, char** buffer) {
+    struct stat st;
+    u64 size = 0;
+    if (stat(source, &st) == 0) {
+        size = st.st_size;
+    }
+    /* TODO: Push to error stack */
+    else return 0;
+    /* TODO: Push to error stack */
+    if (size == 0) return 0;
+    *buffer = (char*)malloc(size + 1);
+    if (*buffer == NULL) ERROR_BAD_ALLOC
+    FILE* fp = fopen(source, "r");
+    u64 bytesRead = fread(buffer, 1, size, fp);
+    fclose(fp);
+    *buffer[bytesRead] = '\0';
+    return size;
+}
+
+u64 cgpl_lexer_init_state_file(LexerState* ls, char* fs) {
+    char* buffer = NULL;
+    u64 size = read_file(fs, &buffer);
+    cgpl_lexer_init_state_string(ls, buffer, size);
+    return size;
 }
 
 void cgpl_lexer_init_state_string(LexerState* ls, char* ptr, u64 size) {
-    if (ptr == NULL) ERROR_UNEXPECTED_NULL_PTR;
+    if (ptr == NULL) ERROR_UNEXPECTED_NULL_PTR
     init_state_base(ls);
-    ls->src.type = CGPL_SOURCE_STRING;
-    ls->src.sbuffer.ptr = ptr;
-    ls->src.sbuffer.size = size;
-    ls->src.sbuffer.cursor = 0;
+    ls->sourceBuffer = ptr;
+    ls->sourceSize = size;
+    ls->sourceCursor = 0;
 }
 
 #define CGPL_EXTENSION ".cgpl"
-static bool check_extension(const char *path)
+static bool is_cgpl_file(const char *path)
 {
     const char* extension = strrchr(path, '.');
     if (extension == NULL) return false;
@@ -251,20 +253,17 @@ static bool check_extension(const char *path)
 
 ListNode* cgpl_lexer_tokenize(char* source) { 
     LexerState ls;
-    FILE* fp = NULL;
 
-    if (check_extension(source)) {
-        fp = fopen(source, "r");
-        if (fp == NULL) cgpl_error_fatal("Failed to open source file.");
-        cgpl_lexer_init_state_file(&ls, fp);
+    if (is_cgpl_file(source)) {
+        cgpl_lexer_init_state_file(&ls, source);
     } else {
         cgpl_lexer_init_state_string(&ls, source, strlen(source));
     }
-    if (ls.src.type < CGPL_SOURCE_FILE || ls.src.type > CGPL_SOURCE_STRING) cgpl_error_fatal("Bad source type");
+    // TODO: Push to error stack
+    if (ls.sourceBuffer == NULL || ls.sourceSize == 0) return NULL;
 
     // Begin
     cgpl_lexer_next(&ls);
-    if (fp != NULL) fclose(fp);
     return ls.head;
 }
 
