@@ -77,7 +77,7 @@ void cgpl_lexer_init_state_string(LexerState* ls, char* sp, u64 ss);
 /* Tokenizes a source (either a file with .cgpl extension or raw string) and returns a list of tokens. */
 ListNode* cgpl_lexer_tokenize(char* source);
 /* Shorthand for grabbing the token value from a node */
-static inline Token* get_token(ListNode* node) {
+ALWAYS_INLINE Token* get_token(ListNode* node) {
     return (Token*)node->data;
 }
 

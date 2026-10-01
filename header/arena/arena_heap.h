@@ -26,19 +26,19 @@ Arena* arena_new(arena_capacity_t capacity);
 /* Tries to push (reserve) data of a given size onto the arena. If 'zero' is true, the data is initialized to 0 before being returned. */
 void* arena_push(Arena* arena, arena_capacity_t size, bool zero);
 /* Pops data off the arena */
-static inline void arena_pop(Arena* arena, arena_capacity_t size) {
+ALWAYS_INLINE void arena_pop(Arena* arena, arena_capacity_t size) {
     arena->pos -= MIN(size, arena->pos - ARENA_BASE_OFFSET);
 }
 /* Pop data off until a given position in the arena */
-static inline void arena_pop_to(Arena* arena, arena_capacity_t pos) {
+ALWAYS_INLINE void arena_pop_to(Arena* arena, arena_capacity_t pos) {
     arena_pop(arena, pos < arena->pos ? arena->pos - pos : 0);
 }
 /* Resets all data in the arena to 0. This should effectively invalidate all pre-existing pointers to the arena. */
-static inline void arena_clear(Arena* arena) {
+ALWAYS_INLINE void arena_clear(Arena* arena) {
     arena_pop_to(arena, ARENA_BASE_OFFSET);
 }
 /* Returns true if the arena is empty */
-static inline bool arena_is_empty(Arena* arena) {
+ALWAYS_INLINE bool arena_is_empty(Arena* arena) {
     return arena->pos <= ARENA_BASE_OFFSET;
 }
 

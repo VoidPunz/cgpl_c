@@ -20,7 +20,7 @@ ListNode* list_new(void* data);
 /* Returns number of nodes for a given node. */
 size_t list_count(ListNode* node);
 /* Connects the second node to the first node. Overrides 'next' field. Use this if you have the tail of a list instead of using list_append. O(1) time complexity. */
-static inline void list_connect(ListNode* firstNode, ListNode* secondNode) {
+ALWAYS_INLINE void list_connect(ListNode* firstNode, ListNode* secondNode) {
     if (firstNode == NULL) return;
     /* Second node can be NULL */
     firstNode->next = secondNode;

@@ -43,7 +43,7 @@ void hashmap_clear(HashMap* map);
 /* Get a key-value pair associated with a given key. Returns NULL if none found. */
 const HashPair* hashmap_get(HashMap* map, const char* key);
 /* Frees a dynamic map by deallocating all its pairs. */
-static inline void hashmap_free(HashMap* map) {
+ALWAYS_INLINE void hashmap_free(HashMap* map) {
     for (hash_size_t i = 0; i < map->capacity; i++)
         if (map->pairs[i] != NULL) free(map->pairs[i]);
 }

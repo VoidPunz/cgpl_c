@@ -24,7 +24,7 @@ void sv_chop_left(StringView* sv, chop_t n);
 /* Split the string view at a given index. Input becomes the right-side, while the new string view object is the new left-side. */
 StringView sv_split(StringView* sv, chop_t index);
 /* Copies a string view object by copying cstr ptr and size */
-static inline StringView sv_copy(const StringView* sv) {
+ALWAYS_INLINE StringView sv_copy(const StringView* sv) {
     StringView nsv = sv_new(sv->cstr);
     return nsv;
 }

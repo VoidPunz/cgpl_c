@@ -19,7 +19,7 @@ typedef struct {
 extern Stack g_ErrorStack;
 
 /* Instantiates a new error */
-static inline CGPLError* cgpl_error_new(const Token* token, const char* msg) {
+ALWAYS_INLINE CGPLError* cgpl_error_new(const Token* token, const char* msg) {
     CGPLError* e = (CGPLError*)malloc(sizeof(CGPLError));
     if (e == NULL) ERROR_BAD_ALLOC;
     e->token = token;
@@ -29,7 +29,7 @@ static inline CGPLError* cgpl_error_new(const Token* token, const char* msg) {
 
 // WIP
 /* Try to raise all the errors in the stack if the stack is not empty. Terminates the program if any error is raised. */
-static inline void cgpl_errors_flush(void) {
+ALWAYS_INLINE void cgpl_errors_flush(void) {
     if (stack_is_empty(&g_ErrorStack)) return;
     printf(WRAP_ERROR_COL("(%d) Errors has occured:\n"), stack_count(&g_ErrorStack));
     CGPLError* e = NULL;
@@ -44,7 +44,7 @@ static inline void cgpl_errors_flush(void) {
 }
 
 /* Push an error onto the error stack. Provided token cannot be null */
-static inline void cgpl_error_push(const Token* token, const char* msg) {
+ALWAYS_INLINE void cgpl_error_push(const Token* token, const char* msg) {
     CGPLError* e = cgpl_error_new(token, msg);
     if (stack_push(&g_ErrorStack, (void*)e) != -1) return;
     puts(WRAP_ERROR_COL("Error stack full, raising all errors..."));
@@ -52,7 +52,7 @@ static inline void cgpl_error_push(const Token* token, const char* msg) {
 }
 
 /* Pop an error from the error stack, if any. Returns null if the stack is empty */
-static inline CGPLError* cgpl_error_pop(void) {
+ALWAYS_INLINE CGPLError* cgpl_error_pop(void) {
     if (stack_is_empty(&g_ErrorStack)) return NULL;
     return (CGPLError*)stack_pop(&g_ErrorStack);
 }

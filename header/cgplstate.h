@@ -13,7 +13,7 @@ typedef struct {
 /* Initialise a state */
 void cgpl_state_init(CGPLState* state);
 /* Free a state */
-static inline void cgpl_state_free(CGPLState** state) {
+ALWAYS_INLINE void cgpl_state_free(CGPLState** state) {
     if (state == NULL) return;
     hashmap_free(&((*state)->symbolMap));
     free(*state);

@@ -34,20 +34,20 @@ void* stack_pop(Stack* stack);
 /* Peek the current data at the top of the stack. Returns a const pointer to the data or NULL if empty. */
 const void* stack_peek(Stack* stack);
 /* Clear the stack of all data. If data is the sole references to dynamic memory, calling this function will cause memory leak(s). */
-static inline void stack_clear(Stack* stack) {
+ALWAYS_INLINE void stack_clear(Stack* stack) {
     memset(stack->buffer, 0, sizeof(void*) * (size_t)stack->size);
     stack->top = -1;
 }
 /* Checks if the stack is full */
-static inline bool stack_is_full(Stack* stack) {
+ALWAYS_INLINE bool stack_is_full(Stack* stack) {
     return stack->buffer == NULL || stack->top == (stack_top_t)stack->size - 1;
 }
 /* Checks if the stack is empty */
-static inline bool stack_is_empty(Stack* stack) {
+ALWAYS_INLINE bool stack_is_empty(Stack* stack) {
     return stack->buffer == NULL || stack->top == -1;
 }
 /* Returns the number of elements in the stack. Returns 0 if the stack is NULL */
-static inline stack_size_t stack_count(Stack* stack) {
+ALWAYS_INLINE stack_size_t stack_count(Stack* stack) {
     return stack == NULL ? 0 : stack->top - 1;
 }
 
