@@ -10,7 +10,7 @@ WIP...
 
 ## Features
 - LR(k=?) Parsing (WIP)
-- Memory arenas (virtual memory support for Windows) (WIP)
+- Memory arenas (eventually virtual memory support for Windows) (WIP)
 - Simple test runner
 - ...
 
