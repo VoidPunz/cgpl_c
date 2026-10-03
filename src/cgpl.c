@@ -35,9 +35,13 @@ int main(int argc, char* argv[]) {
         puts("Beginning tokenization...");
     #endif /* DEBUG */
 
-    ListNode* tokenHead = cgpl_lexer_tokenize(source);
-    Ast_Node* astHead = cgpl_parse(tokenHead);
-    list_free(&tokenHead);
+    ListNode* tokenNode = cgpl_lexer_tokenize(source);
+    #ifdef DEBUG
+        list_print(tokenNode, cgpl_lexer_print_token);
+    #endif
+
+    Ast_Node* astHead = cgpl_parse(tokenNode);
+    list_free(&tokenNode);
 
     #ifdef DEBUG
         cgpl_ast_print(astHead);

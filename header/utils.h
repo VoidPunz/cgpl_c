@@ -5,7 +5,7 @@
 #include "ansii.h"
 
 #if defined(_MSC_VER)
-    #define ALWAYS_INLINE __forceinline
+    #define ALWAYS_INLINE static __forceinline
 #elif defined(__GNUC__) || defined(__clang__)
     #define ALWAYS_INLINE static inline __attribute__((always_inline))
 #else

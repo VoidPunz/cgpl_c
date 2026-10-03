@@ -1,108 +1,185 @@
 #include "../header/parser.h"
 
-#define EQ(node, value) (node != NULL && get_token(node)->type == value)
-#define ATTEMPT(func, ast, resetNode, rest) if ((ast = func(rest)) == NULL) *rest = resetNode;
+#define PARSE_FUNC static Ast_Node*
 
-/* Returns the current token while advancing to the next in the list. */
-static ListNode* next(ListNode** rest) {
-    if (rest == NULL) return NULL;
-    if (*rest == NULL) return NULL;
-    ListNode* node = *rest;
-    *rest = (*rest)->next;
-    return node; 
-}
-
-/* Consumes whitespace until next non-whitespace token is found while ignoring newlines. Returns true if any whitespace has been removed. */
-static bool consume(ListNode** rest) {
-    DEBUG_PARSER("consume", rest);
-    if (*rest == NULL) return false;
-    const Token* token = get_token(*rest);
-    bool isWhitespace = IS_WHITESPACE(token->type) && token->type != TOKEN_NEWLINE;
-    if (isWhitespace) {
-        next(rest);
-        return consume(rest);
+/* Attempt to parse using a given parser function. If the out is NULL, the tailNode gets set to the resetNode. */
+ALWAYS_INLINE bool attempt(Ast_Node* (*parse_func)(ListNode*, ListNode**), Ast_Node** out, ListNode* headNode, ListNode* resetNode, ListNode** tailNode) {
+    DEBUG_PRINT("ATTEMPT BEGIN...\n");
+    bool hasFailed = (*out = parse_func(headNode, tailNode)) == NULL;
+    if (hasFailed) {
+        *tailNode = resetNode;
+        DEBUG_PRINT("ATTEMPT FAILED!\n");
+    } else { 
+        DEBUG_PRINT("ATTEMPT SUCCESSFUL!\n");
     }
-    return false;
+    return hasFailed;
 }
 
-/* Peek n number of tokens ahead (ignores whitespace) */
-static token_t peek(ListNode* node, u64 n) {
-    while (n-- != 0 && node != NULL) {
-        consume(&node);
-        node = node->next;
+/* Checks if the given node is not NULL and that the token type matches */
+ALWAYS_INLINE bool eq(ListNode* node, token_t value) {
+    return (node != NULL && get_token(node)->type == value);
+}
+
+/* Returns the current head of the tail while advancing to the next token. */
+ALWAYS_INLINE ListNode* next(ListNode** tailNode) {
+    if (tailNode == NULL) return NULL;
+    if (*tailNode == NULL) return NULL;
+    ListNode* headNode = *tailNode;
+    *tailNode = (*tailNode)->next;
+    return headNode; 
+}
+
+/* Connects the first AST node's treeNode to a new list instance of the second AST node */
+ALWAYS_INLINE void connect_ast(Ast_Node* astFirst, Ast_Node* astSecond) {
+    if (astFirst == NULL) return;
+    if (astSecond == NULL) return;
+    ListNode* second = list_new(astSecond);
+    if (astFirst->treeNode == NULL)
+        astFirst->treeNode = second;
+    else
+        list_connect(astFirst->treeNode, list_new(astSecond));
+}
+
+/* Appends the second ast node to the back of the first ast node */
+ALWAYS_INLINE void append_ast(Ast_Node* astFirst, Ast_Node* astSecond) {
+    if (astFirst == NULL) return;
+    if (astSecond == NULL) return;
+    ListNode* second = list_new(astSecond);
+    if (astFirst->treeNode == NULL)
+        astFirst->treeNode = second;
+    else
+        list_append(astFirst->treeNode, list_new(astSecond));
+}
+
+/* Shorthand for consuming a matching token and updating headNode or pushing an error */
+ALWAYS_INLINE const Token* consume_token(ListNode** headNode, ListNode** tailNode, token_t type) {
+    const Token* token = get_token(*headNode);
+    if (token == NULL) return NULL;
+    if (eq(*headNode, type)) {
+        DEBUG_PRINT("Consumed \"%s\"\n", cgpl_token_tostring[token->type]);
+        *headNode = next(tailNode);
+    } else {
+        cgpl_error_push(token, PARSER_ERROR_BAD_TOKEN);
+        return NULL;
     }
-    return node != NULL ? get_token(node)->type : TOKEN_NA;
+    return token;
 }
 
-static Ast_Node* statement(ListNode** rest) {
-    DEBUG_PARSER("statement", rest);
+/* Consumes whitespace on the tailNode until next non-whitespace token is found. Returns the new head for the tail. */
+static ListNode* consume_whitespace(ListNode* headNode, ListNode** tailNode) {
+    #ifdef DEBUG
+    static u64 c = 0;
+    #endif
+    DEBUG_PARSER("consume", headNode, tailNode);
+    if (headNode == NULL) return NULL;
+    if (*tailNode == NULL) return headNode;
+    const Token* token = get_token(headNode);
+    if (IS_WHITESPACE(token->type)) {
+        next(tailNode);
+        #ifdef DEBUG
+        c++;
+        #endif
+        return consume_whitespace(headNode->next, tailNode);
+    }
+    #ifdef DEBUG
+    DEBUG_PRINT("\tRemoved %lld whitespaces...\n", c);
+    c = 0;
+    #endif
+    return headNode;
+}
+
+PARSE_FUNC func(ListNode* headNode, ListNode** tailNode) {
+    DEBUG_PARSER("parse_function", headNode, tailNode);
     return NULL;
 }
 
-/* _value_ */
-static Ast_Node* value(ListNode** rest) {
-    consume(rest);
-    DEBUG_PARSER("value", rest);
-    if (!(EQ(*rest, TOKEN_NUMERIC) || EQ(*rest, TOKEN_KEYWORD_BOOL))) SYNTAX_ERROR("Attempted to assign a symbol to a non-value.");
-    Ast_Node* ast = cgpl_ast_new(get_token(next(rest)), CGPL_AST_VALUE);
-    return ast;
+/////////////////////////////////////
+//          Instructions           //
+/////////////////////////////////////
+
+PARSE_FUNC expression(ListNode* headNode, ListNode** tailNode) {
+    const Token* token = get_token(headNode);
+    Ast_Node* astExpression = cgpl_new_ast(token, AST_EXPRESSION);
+    return astExpression;
 }
 
-/* _id_ | = _value_ */
-static Ast_Node* assignment(ListNode** rest) {
-    consume(rest);
-    DEBUG_PARSER("assignment", rest);
-    if (!EQ(*rest, TOKEN_EQUALS)) SYNTAX_ERROR("Expected a '=' after identifier.");
-    Ast_Node* ast = cgpl_ast_new(get_token(next(rest)), CGPL_AST_ASSIGN);
-    ast->treeNode = list_new(value(rest));
-    return ast;
+PARSE_FUNC assign(ListNode* headNode, ListNode** tailNode) {
+    DEBUG_PARSER("assign", headNode, tailNode);
+    const Token* wordToken = consume_token(&headNode, tailNode, TOKEN_WORD);
+    headNode = consume_whitespace(headNode, tailNode);
+    consume_token(&headNode, tailNode, TOKEN_EQUALS);
+    headNode = consume_whitespace(headNode, tailNode);
+    Ast_Node* astAssign = cgpl_new_ast(wordToken, AST_ASSIGN);
+    Ast_Node* astExpression = expression(headNode, tailNode);
+    connect_ast(astAssign, astExpression);
+    return astAssign;
 }
 
-/* var | _id_ = _value_ */
-static Ast_Node* vardecl(ListNode** rest) {
-    consume(rest);
-    DEBUG_PARSER("vardecl", rest);
-    if (!EQ(*rest, TOKEN_WORD)) SYNTAX_ERROR("Expected a word after 'var' keyword.");
-    Ast_Node* ast = cgpl_ast_new(get_token(next(rest)), CGPL_AST_VARDECL);
-    ast->treeNode = list_new(assignment(rest));
-    return ast;
+PARSE_FUNC vardecl(ListNode* headNode, ListNode** tailNode) {
+    consume_token(&headNode, tailNode, TOKEN_KEYWORD_VAR);
+    headNode = consume_whitespace(headNode, tailNode);
+    DEBUG_PARSER("vardecl", headNode, tailNode);
+    const Token* token = get_token(headNode);
+    Ast_Node* astVardcl = cgpl_new_ast(token, AST_VARDECL);
+    Ast_Node* astAssign = assign(headNode, tailNode);
+    connect_ast(astVardcl, astAssign);
+    return astVardcl;
 }
 
-static Ast_Node* instruction(ListNode** rest) {
-    DEBUG_PARSER("instruction", rest);
+PARSE_FUNC instruction(ListNode* headNode, ListNode** tailNode) {
+    headNode = consume_whitespace(headNode, tailNode);
+    DEBUG_PARSER("instruction", headNode, tailNode);
     Ast_Node* ast = NULL;
+    if (eq(headNode, TOKEN_KEYWORD_VAR))
+        ast = vardecl(headNode, tailNode);
+    else if (eq(headNode, TOKEN_WORD))
+        ast = assign(headNode, tailNode);
+    return ast;
+}
 
-    if (EQ(*rest, TOKEN_KEYWORD_VAR)) {
-        ast = cgpl_ast_new(get_token(next(rest)), CGPL_AST_INSTRUCTION);
-        ast->treeNode = list_new(vardecl(rest));
+/////////////////////////////////////
+//           Statements            //
+/////////////////////////////////////
+
+PARSE_FUNC statement(ListNode* headNode, ListNode** tailNode) {
+    DEBUG_PARSER("statement", headNode, tailNode);
+    return NULL;
+}
+
+/* Begin the file by attempting to parse either an instruction or a statement */
+PARSE_FUNC file(ListNode* headNode, ListNode** tailNode) {
+    DEBUG_PARSER("file", headNode, tailNode);
+    const Token* sofToken = consume_token(&headNode, tailNode, TOKEN_SOF);
+
+    Ast_Node* ast = NULL;
+    attempt(statement, &ast, headNode, *tailNode, tailNode);
+    if (ast != NULL) return ast;
+    attempt(instruction, &ast, headNode, *tailNode, tailNode);
+    if (ast != NULL) return ast;
+    attempt(func, &ast, headNode, *tailNode, tailNode);
+    if (ast == NULL) {
+        cgpl_error_push(get_token(headNode), PARSER_PREFIX "Failed to parse file");
+        return NULL;
     }
-    return ast;
-}
+    consume_token(&headNode, tailNode, TOKEN_EOF);
 
-/* Dynamically attempt to parse either a statement or an instruction. */
-static Ast_Node* start(ListNode** rest) {
-    DEBUG_PARSER("start", rest);
-
-    /* Look for either a statement or instruction */
-    Ast_Node* ast = NULL;
-
-    if (!EQ(*rest, TOKEN_SOF)) SYNTAX_ERROR("Missing SOF token");
-    next(rest);
-    ListNode* resetNode = *rest;
-    ATTEMPT(statement, ast, resetNode, rest)
-    ATTEMPT(instruction, ast, resetNode, rest)
-    if (ast == NULL) cgpl_error_fatal("Failed to parse neither a statement nor an instruction.");
-    consume(rest);
-    if (!EQ(*rest, TOKEN_EOF)) SYNTAX_ERROR("Missing EOF token");
-
+    Ast_Node* fileAst = cgpl_new_ast(sofToken, AST_SOF);
+    list_connect(fileAst->treeNode, list_new(ast));
     return ast;
 }
 
 Ast_Node* cgpl_parse(ListNode* tokenNode) {
-    return start(&tokenNode);
+    DEBUG_PRINT("Begin parsing (%lld total tokens)...\n", list_count(tokenNode));
+    /* Haskell style input: (x:xs) */
+    ListNode* headNode = tokenNode;
+    next(&tokenNode);
+    /* Entry point */
+    Ast_Node* ast = file(headNode, &tokenNode);
+    DEBUG_PRINT("Finished parsing!\n");
+    return ast;
 }
 
-Ast_Node* cgpl_ast_new(const Token* token, ast_kind_t kind) {
+Ast_Node* cgpl_new_ast(const Token* token, ast_kind_t kind) {
     Ast_Node* node = (Ast_Node*)malloc(sizeof(Ast_Node));
     node->token = token;
     node->treeNode = NULL;
@@ -117,6 +194,7 @@ Ast_Node* cgpl_ast_new(const Token* token, ast_kind_t kind) {
     }
 
     void cgpl_ast_print(Ast_Node* ast) {
+        if (ast == NULL) return;
         static u64 c = 0;
         ListNode* node = ast->treeNode;
         printf("\n");

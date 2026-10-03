@@ -8,8 +8,8 @@ ListNode* list_new(void* data) {
     return node;
 }
 
-size_t list_count(ListNode* node) {
-    size_t c = 0;
+u64 list_count(ListNode* node) {
+    u64 c = 0;
     while (node != NULL) {
         c++;
         node = node->next;

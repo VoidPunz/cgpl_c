@@ -6,19 +6,25 @@
 #include "lexer.h"
 
 #define SYNTAX_ERROR(msg) cgpl_error_fatal("Syntax error: %s", msg)
+#define PARSER_PREFIX "[PARSER] "
 
 #ifdef DEBUG
-    #define DEBUG_PARSER(id, rest) DEBUG_PRINT("%s: [rest: %s - %lld]\n", id, cgpl_token_tostring[get_token(*rest)->type], list_count(*rest))
+    #define DEBUG_PARSER(id, headNode, tailNode) DEBUG_PRINT("\t%s: [%s - %s (+%lld more)]\n", id, cgpl_token_tostring[get_token(headNode)->type], cgpl_token_tostring[get_token(*tailNode)->type], list_count(*tailNode))
 #else
-    #define DEBUG_PARSER(id, rest)
+    #define DEBUG_PARSER(id, headNode, tailNode)
 #endif
 
-#define AST_KIND_LIST(X)    \
-    X(CGPL_AST_INSTRUCTION) \
-    X(CGPL_AST_VARDECL)     \
-    X(CGPL_AST_ASSIGN)      \
-    X(CGPL_AST_VALUE)       \
-    X(CGPL_AST_LIMIT)       \
+#define AST_KIND_LIST(X)\
+    X(AST_SOF)          \
+    X(AST_EOF)          \
+    X(AST_INSTRUCTION)  \
+    X(AST_STATEMENT)    \
+    X(AST_FUNCTION)     \
+    X(AST_VARDECL)      \
+    X(AST_ASSIGN)       \
+    X(AST_EXPRESSION)   \
+    X(AST_TERM)         \
+    X(AST_LIMIT)        \
 
 typedef enum {
     AST_KIND_LIST(GENERATE_ENUM)
@@ -45,6 +51,6 @@ typedef struct Ast_Node {
 /* Parse a list of tokens into an abstract syntax tree. */
 Ast_Node* cgpl_parse(ListNode* tokenNode);
 /* Allocate a new AST node on the heap. */
-Ast_Node* cgpl_ast_new(const Token* token, ast_kind_t kind);
+Ast_Node* cgpl_new_ast(const Token* token, ast_kind_t kind);
 
 #endif
